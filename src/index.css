@@ -1,0 +1,356 @@
+@import "tailwindcss";
+
+/* ── StockFlow Mobile Design System ── */
+/* Base: Light Mode (StockFlow Web warm cream palette) */
+/* Dark Mode: Activated via [data-theme="dark"] or .dark on <html> */
+
+:root {
+  /* Surface & Base (Warm Cream / White) */
+  --bg:           #F7F5F0;
+  --bg-warm:      #EDEBE4;
+  --bg-glass:     rgba(247, 245, 240, 0.82);
+  --card:         #FFFFFF;
+  --card-glass:   rgba(255, 255, 255, 0.78);
+  --border:       #E2DDD5;
+  --border-soft:  rgba(226, 221, 213, 0.65);
+
+  /* Typography */
+  --text:         #1C1B1A;
+  --text-muted:   #7A7568;
+  --text-faint:   #A8A399;
+
+  /* Brand Copper (identical to StockFlow web) */
+  --copper:       #B8703D;
+  --copper-dark:  #9C5C2E;
+  --copper-10:    rgba(184, 112, 61, 0.12);
+  --copper-20:    rgba(184, 112, 61, 0.22);
+
+  /* Functional Status (subtle, restrained) */
+  --success:      #2A7A4D;
+  --success-10:   rgba(42, 122, 77, 0.1);
+  --danger:       #C23B2E;
+  --danger-10:    rgba(194, 59, 46, 0.1);
+  --warning:      #B87D28;
+  --warning-10:   rgba(184, 125, 40, 0.1);
+
+  /* Glassmorphic Blur (Linear / Apple style) */
+  --blur:         blur(20px) saturate(170%);
+  --shadow-card:  0 1px 3px rgba(0,0,0,0.04), 0 6px 18px rgba(0,0,0,0.02);
+
+  /* Heights & Metrics */
+  --header-h:     54px;
+  --nav-h:        60px;
+  --radius-card:  10px;
+  --radius-pill:  9999px;
+  --radius-sharp: 4px;
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+}
+
+/* === DARK MODE === */
+[data-theme="dark"],
+.dark {
+  --bg:           #0A0A0C;
+  --bg-warm:      #12141A;
+  --bg-glass:     rgba(10, 10, 12, 0.86);
+  --card:         #14161C;
+  --card-glass:   rgba(20, 22, 28, 0.82);
+  --border:       #232733;
+  --border-soft:  rgba(35, 39, 51, 0.55);
+
+  --text:         #F7F5F0;
+  --text-muted:   #8A8478;
+  --text-faint:   #4E4B45;
+
+  --copper:       #B8703D;
+  --copper-dark:  #E4BC8C;
+  --copper-10:    rgba(184, 112, 61, 0.16);
+  --copper-20:    rgba(184, 112, 61, 0.28);
+
+  --success:      #3AC27B;
+  --success-10:   rgba(58, 194, 123, 0.14);
+  --danger:       #E55446;
+  --danger-10:    rgba(229, 84, 70, 0.14);
+  --warning:      #E09F3E;
+  --warning-10:   rgba(224, 159, 62, 0.14);
+
+  --shadow-card:  0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.25);
+  color-scheme: dark;
+}
+
+/* ── Reset ── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* ── Fallback Material Symbols font rule ── */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Custom Scrollbars ── */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-pill); }
+
+/* ── Typography Helpers ── */
+.eyebrow {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--copper);
+}
+.mono { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* ── Cards & Surfaces ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-glass {
+  background: var(--card-glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle card hover underline (StockFlow web signature) */
+.card-hover {
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+.card-hover::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  height: 2px; width: 100%;
+  background: var(--copper);
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+.card-hover:hover::after { transform: scaleX(1); }
+
+/* ── Clean Pill & Sharp Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 18px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, opacity 0.15s;
+  white-space: nowrap;
+  user-select: none;
+  outline: none;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; pointer-events: none; }
+
+.btn-primary {
+  background: var(--copper);
+  border-color: var(--copper);
+  color: #FFFFFF;
+}
+.btn-primary:hover {
+  background: var(--copper-dark);
+  border-color: var(--copper-dark);
+}
+
+.btn-secondary {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+}
+.btn-secondary:hover {
+  background: var(--bg-warm);
+  border-color: var(--copper);
+  color: var(--copper);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  padding: 0 10px;
+  min-height: 30px;
+  border-radius: var(--radius-pill);
+}
+.btn-ghost:hover {
+  background: var(--bg-warm);
+  color: var(--text);
+}
+
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #FFFFFF;
+}
+.btn-danger:hover { opacity: 0.9; }
+
+.btn-sm {
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 10px;
+}
+
+.btn-sharp {
+  border-radius: var(--radius-sharp);
+}
+
+/* ── Minimalist Status Pills ── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+.pill-success {
+  background: var(--success-10);
+  color: var(--success);
+  border-color: rgba(42, 122, 77, 0.2);
+}
+.pill-danger {
+  background: var(--danger-10);
+  color: var(--danger);
+  border-color: rgba(194, 59, 46, 0.2);
+}
+.pill-warning {
+  background: var(--warning-10);
+  color: var(--warning);
+  border-color: rgba(184, 125, 40, 0.2);
+}
+.pill-copper {
+  background: var(--copper-10);
+  color: var(--copper);
+  border-color: rgba(184, 112, 61, 0.25);
+}
+.pill-muted {
+  background: var(--bg-warm);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+/* ── Clean Inputs ── */
+input[type="text"],
+input[type="search"],
+input[type="number"],
+input[type="datetime-local"],
+select,
+textarea {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 0 14px;
+  min-height: 38px;
+  width: 100%;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--copper);
+  box-shadow: 0 0 0 3px var(--copper-10);
+}
+input::placeholder, textarea::placeholder {
+  color: var(--text-faint);
+}
+textarea {
+  border-radius: 8px;
+  padding: 10px 14px;
+  resize: vertical;
+}
+
+/* ── Animations ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinning { animation: spin 0.9s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Leaflet Map Theme Integration (Light & Dark) ── */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-card) !important;
+  border-radius: var(--radius-card) !important;
+}
+.leaflet-popup-content {
+  margin: 10px 14px !important;
+  line-height: 1.4 !important;
+  color: var(--text) !important;
+}
+.leaflet-container {
+  font-family: inherit !important;
+  background: var(--bg) !important;
+}
+.leaflet-bar {
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-card) !important;
+  border-radius: var(--radius-card) !important;
+  overflow: hidden;
+}
+.leaflet-bar a {
+  background-color: var(--card) !important;
+  border-bottom: 1px solid var(--border) !important;
+  color: var(--text) !important;
+}
+.leaflet-bar a:hover {
+  background-color: var(--bg-warm) !important;
+  color: var(--copper) !important;
+}
+
