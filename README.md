@@ -1,15 +1,15 @@
-﻿# StockFlow AI Mobile 🚚📡
+﻿# StockFlow AI Mobile 
 
 > **Resilient Field Logistics, Offline-First Telemetry & Tactical Navigation**  
 > Tailored for contested, air-gapped, and low-connectivity transit corridors.
 
 ---
 
-## 🧭 Overview
+##  Overview
 
 **StockFlow AI Mobile** is the mobile-optimized, field-grade counterpart to the StockFlow AI supply chain web platform. Engineered for frontline convoy drivers, logistics operators, and humanitarian distribution teams operating in challenging environments (such as mountainous corridors and disrupted network areas).
 
-### ⚡ Core Capabilities
+### Core Capabilities
 
 - **Resilient Offline-First Architecture**:
   - Local IndexedDB storage for offline field incident drafts, tile caches, and breadcrumb telemetry.
@@ -31,7 +31,7 @@
 
 ---
 
-## 🎨 Design System: StockFlow Dual Aesthetic
+##  Design System: StockFlow Dual Aesthetic
 
 StockFlow AI Mobile adheres to an enterprise, non-AI aesthetic with human-crafted clarity:
 
@@ -51,7 +51,7 @@ StockFlow AI Mobile adheres to an enterprise, non-AI aesthetic with human-crafte
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Framework**: React 19, TypeScript, Vite
 - **Styling**: Tailwind CSS v4, Lucide React icons, CSS Design Tokens
@@ -62,7 +62,7 @@ StockFlow AI Mobile adheres to an enterprise, non-AI aesthetic with human-crafte
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
