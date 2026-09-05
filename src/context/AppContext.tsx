@@ -459,7 +459,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const chosenRoute = route || activeRoute || TACTICAL_ROUTES[0];
     setActiveRoute(chosenRoute);
     setIsDrivingJourney(true);
-    setIsFullScreenMap(true);
+    setIsFullScreenMap(false);
     setCurrentStepIndex(0);
     driveWaypointIdxRef.current = 0;
     setIsDriveSimulating(true);
@@ -494,6 +494,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const stopDrivingJourney = useCallback(() => {
     setIsDrivingJourney(false);
+    setIsFullScreenMap(false);
     setIsDriveSimulating(false);
     cancelSpeech();
     showToast('Navigation Ended');

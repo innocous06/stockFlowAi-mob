@@ -19,7 +19,7 @@ export const ThemeContext = React.createContext<{
 }>({ isDark: false, toggleTheme: () => {} });
 
 const MainContent: React.FC = () => {
-  const { currentTab, toastMessage, isDrivingJourney, dismissToast } = useApp();
+  const { currentTab, toastMessage, isDrivingJourney, dismissToast, isFullScreenMap } = useApp();
   const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
@@ -28,31 +28,33 @@ const MainContent: React.FC = () => {
 
   return (
     <div style={{ height: '100%', background: 'var(--bg)', color: 'var(--text)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Fixed Header */}
-      <Header currentTab={currentTab} />
+      {/* Fixed Header (hidden during driving HUD or fullscreen map) */}
+      {!isDrivingJourney && !isFullScreenMap && <Header currentTab={currentTab} />}
 
-      {/* Scrollable content */}
-      <main style={{
-        flex: 1,
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        paddingTop: 'calc(var(--header-h) + 14px)',
-        paddingBottom: 'calc(var(--nav-h) + 14px)',
-        paddingLeft: 14,
-        paddingRight: 14,
-        maxWidth: 480,
-        width: '100%',
-        margin: '0 auto',
-      }}>
-        {currentTab === 'driver-home'          && <DriverHome />}
-        {currentTab === 'resilient-navigation' && <ResilientNavigation />}
-        {currentTab === 'incident-reporting'   && <IncidentReporting />}
-        {currentTab === 'emergency-sos'        && <EmergencySOS />}
-        {currentTab === 'offline-sync-center'  && <OfflineSyncCenter />}
-      </main>
+      {/* Scrollable content (unmounted during driving to eliminate duplicate map rendering) */}
+      {!isDrivingJourney && (
+        <main style={{
+          flex: 1,
+          overflowY: isFullScreenMap ? 'hidden' : 'auto',
+          overflowX: 'hidden',
+          paddingTop: isFullScreenMap ? 0 : 'calc(var(--header-h) + 14px)',
+          paddingBottom: isFullScreenMap ? 0 : 'calc(var(--nav-h) + 14px)',
+          paddingLeft: isFullScreenMap ? 0 : 14,
+          paddingRight: isFullScreenMap ? 0 : 14,
+          maxWidth: isFullScreenMap ? '100%' : 480,
+          width: '100%',
+          margin: '0 auto',
+        }}>
+          {currentTab === 'driver-home'          && <DriverHome />}
+          {currentTab === 'resilient-navigation' && <ResilientNavigation />}
+          {currentTab === 'incident-reporting'   && <IncidentReporting />}
+          {currentTab === 'emergency-sos'        && <EmergencySOS />}
+          {currentTab === 'offline-sync-center'  && <OfflineSyncCenter />}
+        </main>
+      )}
 
-      {/* Fixed Bottom Nav */}
-      <BottomNav />
+      {/* Fixed Bottom Nav (hidden during driving HUD or fullscreen map) */}
+      {!isDrivingJourney && !isFullScreenMap && <BottomNav />}
 
       {/* Fullscreen Driving HUD */}
       {isDrivingJourney && <ActiveDrivingHUD />}

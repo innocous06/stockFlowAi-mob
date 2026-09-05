@@ -846,14 +846,14 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const inspectBearing = calculateBearing(currentGPS.latitude, currentGPS.longitude, inspectCoord.lat, inspectCoord.lng);
   const inspectMGRS = toMGRS(inspectCoord.lat, inspectCoord.lng);
 
-  const effectiveShowControlsBar = showControlsBar || isFullScreenMap;
+  const effectiveShowControlsBar = showControlsBar;
 
   // Seamlessly adapt Leaflet canvas on entering/exiting Full Screen map mode
   useEffect(() => {
     if (!mapRef.current) return;
     const t1 = setTimeout(() => mapRef.current?.invalidateSize(), 50);
-    const t2 = setTimeout(() => mapRef.current?.invalidateSize(), 200);
-    const t3 = setTimeout(() => mapRef.current?.invalidateSize(), 500);
+    const t2 = setTimeout(() => mapRef.current?.invalidateSize(), 150);
+    const t3 = setTimeout(() => mapRef.current?.invalidateSize(), 350);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -862,12 +862,11 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   }, [isFullScreenMap]);
 
   const mapContent = (
-    <div className={`relative w-full ${isFullScreenMap ? 'fixed inset-0 z-[99998] rounded-none h-screen w-screen m-0 p-0' : heightClass} rounded-xl overflow-hidden shadow-2xl border border-[var(--border)] bg-[var(--bg)]`}>
+    <div className={`relative w-full ${heightClass} ${isFullScreenMap ? 'rounded-none' : 'rounded-xl'} overflow-hidden border border-[var(--border)] bg-[var(--bg)]`}>
       
       {/* Target Map DOM Div */}
       <div
         ref={mapContainerRef}
-        id="tactical-leaflet-map"
         className="w-full h-full min-h-full z-0 cursor-crosshair"
         style={{ width: '100%', height: '100%', minHeight: '100%', display: 'block' }}
       />

@@ -306,10 +306,10 @@ export const ResilientNavigation: React.FC = () => {
         ))}
       </div>
 
-      {/* ── Tactical Map Card (Clean Embed without overlapping controls) ── */}
+      {/* ── Tactical Map Card ── */}
       <div
-        className="card"
-        style={{
+        className={isFullScreenMap ? "fixed inset-0 z-[99999] w-screen h-screen bg-[var(--bg)] m-0 p-0 overflow-hidden" : "card"}
+        style={isFullScreenMap ? { position: 'fixed', inset: 0, zIndex: 99999, width: '100vw', height: '100vh', background: 'var(--bg)' } : {
           height: 250,
           position: 'relative',
           overflow: 'hidden',
@@ -322,8 +322,80 @@ export const ResilientNavigation: React.FC = () => {
           showTileCacheIndicator={false}
           showGridOverlay={false}
         />
-        {/* Fullscreen Expand Overlay Button */}
-        {!isFullScreenMap && (
+
+        {/* Fullscreen Mode Clean Header Bar */}
+        {isFullScreenMap ? (
+          <div
+            style={{
+              position: 'absolute',
+              top: 14,
+              left: 14,
+              right: 14,
+              zIndex: 999999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+              pointerEvents: 'none',
+            }}
+          >
+            {/* Exit Full Map Button */}
+            <button
+              type="button"
+              onClick={() => setIsFullScreenMap(false)}
+              style={{
+                pointerEvents: 'auto',
+                padding: '8px 14px',
+                borderRadius: 'var(--radius-pill)',
+                background: 'var(--card-glass)',
+                backdropFilter: 'var(--blur)',
+                WebkitBackdropFilter: 'var(--blur)',
+                border: '1px solid var(--border)',
+                fontSize: 11,
+                fontWeight: 800,
+                color: 'var(--text)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+              }}
+            >
+              <Minimize2 size={13} strokeWidth={2.5} className="text-[var(--copper)]" />
+              <span>{t('route.exit_full')}</span>
+            </button>
+
+            {/* Right: Fit Route (if active) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, pointerEvents: 'auto' }}>
+              {activeRoute && (
+                <button
+                  type="button"
+                  onClick={() => triggerRecenterOnUser()}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius-pill)',
+                    background: 'var(--card-glass)',
+                    backdropFilter: 'var(--blur)',
+                    WebkitBackdropFilter: 'var(--blur)',
+                    border: '1px solid var(--border)',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: 'var(--copper)',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 5,
+                  }}
+                >
+                  <Route size={12} strokeWidth={2} />
+                  <span>{t('route.fit_route')}</span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Normal Embed: Fullscreen Expand Overlay Button */
           <button
             type="button"
             onClick={() => setIsFullScreenMap(true)}
