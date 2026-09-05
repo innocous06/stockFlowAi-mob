@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import {
   AlertTriangle,
@@ -11,9 +11,12 @@ import {
   Volume2,
   VolumeX,
   Compass,
+  ZoomIn,
+  Maximize2,
 } from 'lucide-react';
 import { BlockedRouteAlert } from '../types';
 import { stopRouteBlockedAlarm } from '../services/alert-sound.service';
+import { ImageViewerModal } from './ImageViewerModal';
 
 interface RouteBlockedModalProps {
   alert: BlockedRouteAlert;
@@ -21,6 +24,8 @@ interface RouteBlockedModalProps {
 }
 
 export const RouteBlockedModal: React.FC<RouteBlockedModalProps> = ({ alert, onAcknowledge }) => {
+  const [showFullPhoto, setShowFullPhoto] = useState(false);
+
   // Ensure audio is stopped if modal unmounts
   useEffect(() => {
     return () => {
@@ -316,14 +321,61 @@ export const RouteBlockedModal: React.FC<RouteBlockedModalProps> = ({ alert, onA
             </div>
           )}
 
-          {/* Photo Preview if attached */}
+          {/* Photo Preview if attached (Clickable to inspect full resolution) */}
           {alert.photo && (
-            <div style={{ borderRadius: 'var(--radius-card)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+            <div
+              onClick={() => setShowFullPhoto(true)}
+              style={{
+                borderRadius: 'var(--radius-card)',
+                overflow: 'hidden',
+                border: '1.5px solid var(--border)',
+                cursor: 'pointer',
+                position: 'relative',
+                background: '#0A0A0C',
+              }}
+              title="Tap to inspect full photo"
+            >
               <img
                 src={alert.photo}
                 alt="Obstacle proof"
-                style={{ width: '100%', maxHeight: 150, objectFit: 'cover', display: 'block' }}
+                style={{
+                  width: '100%',
+                  maxHeight: 160,
+                  objectFit: 'cover',
+                  display: 'block',
+                  transition: 'opacity 0.2s ease',
+                }}
               />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 60%, transparent 100%)',
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  color: '#FFFFFF',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700 }}>
+                  <ZoomIn size={14} style={{ color: 'var(--copper-dark)' }} />
+                  <span>Tap to inspect photo evidence</span>
+                </div>
+                <span
+                  style={{
+                    fontSize: 8,
+                    fontWeight: 800,
+                    padding: '2px 7px',
+                    borderRadius: 'var(--radius-pill)',
+                    background: 'var(--danger)',
+                    color: '#FFFFFF',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  FULL PROOF
+                </span>
+              </div>
             </div>
           )}
         </div>
@@ -364,6 +416,20 @@ export const RouteBlockedModal: React.FC<RouteBlockedModalProps> = ({ alert, onA
           </div>
         </div>
       </motion.div>
+
+      {/* Fullscreen Photo Lightbox Modal */}
+      {alert.photo && (
+        <ImageViewerModal
+          isOpen={showFullPhoto}
+          imageUrl={alert.photo}
+          title={alert.title}
+          subtitle={`${alert.affectedRouteName || 'Active Route'} · ${alert.districtRoadSegment || ''}`}
+          reporter={alert.reportedBy}
+          coordinates={alert.coordinates}
+          timestamp="Field Photo Telemetry"
+          onClose={() => setShowFullPhoto(false)}
+        />
+      )}
     </div>
   );
 };

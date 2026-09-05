@@ -26,7 +26,9 @@ import {
   Loader2,
   Compass,
   User,
+  ZoomIn,
 } from 'lucide-react';
+import { ImageViewerModal } from './ImageViewerModal';
 
 const DISTRICT_ROAD_PRESETS = [
   'NH-40 Guwahati-Shillong Expressway (Mile 14)',
@@ -119,6 +121,14 @@ export const IncidentReporting: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewMode, setViewMode] = useState<'form' | 'history'>('form');
   const [conflictIncident, setConflictIncident] = useState<IncidentReport | null>(null);
+  const [selectedViewerPhoto, setSelectedViewerPhoto] = useState<{
+    url: string;
+    title: string;
+    subtitle?: string;
+    reporter?: string;
+    coordinates?: string;
+    timestamp?: string;
+  } | null>(null);
 
   useEffect(() => {
     const unsub = incidentSyncService.subscribe((event: SyncProgressEvent) => {
@@ -656,28 +666,72 @@ export const IncidentReporting: React.FC = () => {
                 {photoAttachments.map((p, i) => (
                   <div key={p.id} style={{ position: 'relative' }}>
                     {p.dataUrl && (
-                      <img
-                        src={p.dataUrl}
-                        alt="Photo thumbnail"
-                        style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 'var(--radius-card)', border: '1px solid var(--border)' }}
-                      />
+                      <div
+                        onClick={() =>
+                          setSelectedViewerPhoto({
+                            url: p.dataUrl!,
+                            title: title || 'Hazard Photo Evidence',
+                            subtitle: districtRoadSegment,
+                            reporter: user?.fullName || 'Field Operator',
+                            coordinates: `${activeLat.toFixed(5)}°N, ${activeLng.toFixed(5)}°E`,
+                            timestamp: 'Draft Attachment',
+                          })
+                        }
+                        style={{
+                          cursor: 'pointer',
+                          position: 'relative',
+                          borderRadius: 'var(--radius-card)',
+                          overflow: 'hidden',
+                          border: '1px solid var(--border)',
+                          width: 72,
+                          height: 72,
+                        }}
+                        title="Click to view full photo"
+                      >
+                        <img
+                          src={p.dataUrl}
+                          alt="Photo thumbnail"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                        <div
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.35)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: 0,
+                            transition: 'opacity 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0')}
+                        >
+                          <ZoomIn size={18} style={{ color: '#FFFFFF' }} />
+                        </div>
+                      </div>
                     )}
                     <button
                       type="button"
-                      onClick={() => setPhotoAttachments((prev) => prev.filter((_, j) => j !== i))}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPhotoAttachments((prev) => prev.filter((_, j) => j !== i));
+                      }}
                       style={{
                         position: 'absolute',
                         top: -5,
                         right: -5,
-                        width: 18,
-                        height: 18,
+                        width: 20,
+                        height: 20,
                         borderRadius: '50%',
                         background: 'var(--danger)',
-                        border: 0,
+                        border: '1.5px solid #FFFFFF',
                         cursor: 'pointer',
                         display: 'grid',
                         placeItems: 'center',
+                        zIndex: 2,
                       }}
+                      title="Remove photo"
                     >
                       <X size={10} strokeWidth={3} style={{ color: '#FFFFFF' }} />
                     </button>
@@ -770,11 +824,69 @@ export const IncidentReporting: React.FC = () => {
                       <div style={{ fontSize: 8, color: 'var(--copper)', marginTop: 2, fontWeight: 600 }}>
                         👤 {inc.reportedBy || 'Field Operator'} · {inc.latitude.toFixed(5)}°N, {inc.longitude.toFixed(5)}°E
                       </div>
-                      {inc.photo_attachments.length > 0 && (
-                        <div style={{ fontSize: 8, color: 'var(--text-faint)', marginTop: 2 }}>
-                          {inc.photo_attachments.length} attachment{inc.photo_attachments.length > 1 ? 's' : ''}
-                        </div>
-                      )}
+                      {(() => {
+                        const photos = Array.from(
+                          new Set([
+                            ...(inc.photos || []),
+                            ...(inc.photo_attachments || []).map((p) => p.dataUrl || p.remoteUrl).filter(Boolean) as string[],
+                          ])
+                        );
+                        if (photos.length === 0) return null;
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                            {photos.map((photoUrl, pIdx) => (
+                              <div
+                                key={pIdx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedViewerPhoto({
+                                    url: photoUrl,
+                                    title: inc.title,
+                                    subtitle: `${inc.category.replace('_', ' ').toUpperCase()} · ${inc.locationName || inc.district_road_segment}`,
+                                    reporter: inc.reportedBy,
+                                    coordinates: `${inc.latitude.toFixed(5)}°N, ${inc.longitude.toFixed(5)}°E`,
+                                    timestamp: new Date(inc.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                  });
+                                }}
+                                style={{
+                                  position: 'relative',
+                                  width: 44,
+                                  height: 44,
+                                  borderRadius: 6,
+                                  overflow: 'hidden',
+                                  border: '1.5px solid var(--border)',
+                                  cursor: 'pointer',
+                                  flexShrink: 0,
+                                }}
+                                title="Click to view photo evidence in high resolution"
+                              >
+                                <img
+                                  src={photoUrl}
+                                  alt={`Evidence ${pIdx + 1}`}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                />
+                                <div
+                                  style={{
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    right: 0,
+                                    background: 'rgba(0,0,0,0.65)',
+                                    borderRadius: '3px 0 0 0',
+                                    padding: '1px 3px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                  }}
+                                >
+                                  <ZoomIn size={10} style={{ color: '#FFFFFF' }} />
+                                </div>
+                              </div>
+                            ))}
+                            <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                              {photos.length} photo{photos.length > 1 ? 's' : ''} (tap to inspect)
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                       <span
@@ -808,6 +920,20 @@ export const IncidentReporting: React.FC = () => {
 
       {/* Conflict Resolution Modal */}
       {conflictIncident && <ConflictDialog incident={conflictIncident} onClose={() => setConflictIncident(null)} />}
+
+      {/* Fullscreen Photo Lightbox Modal */}
+      {selectedViewerPhoto && (
+        <ImageViewerModal
+          isOpen={!!selectedViewerPhoto}
+          imageUrl={selectedViewerPhoto.url}
+          title={selectedViewerPhoto.title}
+          subtitle={selectedViewerPhoto.subtitle}
+          reporter={selectedViewerPhoto.reporter}
+          coordinates={selectedViewerPhoto.coordinates}
+          timestamp={selectedViewerPhoto.timestamp}
+          onClose={() => setSelectedViewerPhoto(null)}
+        />
+      )}
     </div>
   );
 };
