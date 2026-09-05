@@ -39,13 +39,16 @@ export const RouteBlockedModal: React.FC<RouteBlockedModalProps> = ({ alert, onA
         position: 'fixed',
         inset: 0,
         zIndex: 100000,
-        background: 'rgba(0, 0, 0, 0.78)',
+        background: 'rgba(0, 0, 0, 0.82)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 14,
+        padding: '14px 12px',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        WebkitOverflowScrolling: 'touch',
       }}
       // Intentionally NOT dismissible by clicking outside - "it wont go away until clicked"
       onClick={(e) => e.stopPropagation()}
@@ -58,6 +61,7 @@ export const RouteBlockedModal: React.FC<RouteBlockedModalProps> = ({ alert, onA
         style={{
           width: '100%',
           maxWidth: 440,
+          maxHeight: 'min(88vh, 88dvh)',
           background: 'var(--card)',
           borderRadius: 'var(--radius-card)',
           border: '2px solid var(--danger)',
@@ -65,7 +69,7 @@ export const RouteBlockedModal: React.FC<RouteBlockedModalProps> = ({ alert, onA
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          maxHeight: '90vh',
+          margin: 'auto',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -78,6 +82,7 @@ export const RouteBlockedModal: React.FC<RouteBlockedModalProps> = ({ alert, onA
             padding: '14px 18px',
             borderBottom: '1px solid var(--border)',
             background: 'var(--bg-warm)',
+            flexShrink: 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -127,9 +132,13 @@ export const RouteBlockedModal: React.FC<RouteBlockedModalProps> = ({ alert, onA
           style={{
             padding: '16px 18px',
             overflowY: 'auto',
+            overflowX: 'hidden',
+            WebkitOverflowScrolling: 'touch',
             display: 'flex',
             flexDirection: 'column',
             gap: 14,
+            flex: '1 1 auto',
+            minHeight: 0,
           }}
         >
           {/* Main High-Visibility Route Blocked Banner */}
@@ -328,6 +337,7 @@ export const RouteBlockedModal: React.FC<RouteBlockedModalProps> = ({ alert, onA
             display: 'flex',
             flexDirection: 'column',
             gap: 8,
+            flexShrink: 0,
           }}
         >
           <button
