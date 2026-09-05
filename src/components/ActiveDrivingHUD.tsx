@@ -219,7 +219,7 @@ export const ActiveDrivingHUD: React.FC = () => {
                 )}
               </div>
 
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', lineHeight: 1.25, marginTop: 2 }}>
+              <div className="font-title" style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', lineHeight: 1.25, marginTop: 2, fontFamily: 'var(--font-heading)' }}>
                 {currentStep.instruction}
               </div>
 
@@ -470,7 +470,7 @@ export const ActiveDrivingHUD: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <AlertTriangle size={18} strokeWidth={2.2} style={{ color: 'var(--danger)' }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Rapid Hazard Beacon</span>
+                <span className="font-title" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>Rapid Hazard Beacon</span>
               </div>
               <button
                 type="button"

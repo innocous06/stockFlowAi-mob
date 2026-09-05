@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { LanguageProvider } from './context/LanguageContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 import { DriverHome } from './components/DriverHome';
@@ -9,6 +10,7 @@ import { IncidentReporting } from './components/IncidentReporting';
 import { OfflineSyncCenter } from './components/OfflineSyncCenter';
 import { EmergencySOS } from './components/EmergencySOS';
 import { ActiveDrivingHUD } from './components/ActiveDrivingHUD';
+import { AuthPage } from './components/AuthPage';
 
 // Theme context
 export const ThemeContext = React.createContext<{
@@ -17,7 +19,12 @@ export const ThemeContext = React.createContext<{
 }>({ isDark: false, toggleTheme: () => {} });
 
 const MainContent: React.FC = () => {
-  const { currentTab, toastMessage, isDrivingJourney } = useApp();
+  const { currentTab, toastMessage, isDrivingJourney, dismissToast } = useApp();
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return <AuthPage />;
+  }
 
   return (
     <div style={{ height: '100%', background: 'var(--bg)', color: 'var(--text)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -50,28 +57,40 @@ const MainContent: React.FC = () => {
       {/* Fullscreen Driving HUD */}
       {isDrivingJourney && <ActiveDrivingHUD />}
 
-      {/* Toast */}
+      {/* Responsive Multi-line Toast Notification with Tap-to-Dismiss */}
       {toastMessage && (
-        <div style={{
-          position: 'fixed',
-          top: 'calc(var(--header-h) + 8px)',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 300,
-          display: 'flex', alignItems: 'center', gap: 8,
-          padding: '9px 16px',
-          background: 'var(--card-glass)',
-          backdropFilter: 'var(--blur)',
-          WebkitBackdropFilter: 'var(--blur)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-pill)',
-          color: 'var(--text)',
-          fontSize: 11, fontWeight: 600,
-          boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
-          maxWidth: '86vw',
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>
-          {toastMessage}
+        <div
+          onClick={dismissToast}
+          style={{
+            position: 'fixed',
+            top: 'calc(var(--header-h) + 10px)',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '10px 14px',
+            background: 'var(--card-glass)',
+            backdropFilter: 'var(--blur)',
+            WebkitBackdropFilter: 'var(--blur)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-card)',
+            color: 'var(--text)',
+            fontSize: 11,
+            fontWeight: 600,
+            lineHeight: 1.4,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
+            width: 'calc(100% - 24px)',
+            maxWidth: 440,
+            wordBreak: 'break-word',
+            whiteSpace: 'normal',
+            cursor: 'pointer',
+          }}
+          title="Tap to dismiss"
+        >
+          <div style={{ flex: 1 }}>{toastMessage}</div>
+          <span style={{ fontSize: 10, opacity: 0.6, padding: '2px 4px', userSelect: 'none' }}>✕</span>
         </div>
       )}
     </div>
@@ -105,9 +124,11 @@ export default function App() {
   return (
     <ThemeContext.Provider value={{ isDark, toggleTheme }}>
       <LanguageProvider>
-        <AppProvider>
-          <MainContent />
-        </AppProvider>
+        <AuthProvider>
+          <AppProvider>
+            <MainContent />
+          </AppProvider>
+        </AuthProvider>
       </LanguageProvider>
     </ThemeContext.Provider>
   );

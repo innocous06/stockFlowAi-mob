@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import L from 'leaflet';
 import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Waypoint } from '../types';
 import { formatCoordinates, calculateBearing, toMGRS, nudgeCoordinate, calculateDistanceMeters } from '../services/gps-geojson.service';
 import {
@@ -24,7 +26,8 @@ import {
   ArrowLeft,
   ArrowRight,
   FileText,
-  Target
+  Target,
+  Route
 } from 'lucide-react';
 
 export type MapLayerType = 'google_hybrid' | 'google_terrain' | 'open_topo' | 'tactical_dark' | 'osm_standard';
@@ -92,6 +95,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     mapLayer,
     setMapLayer
   } = useApp();
+  const { t } = useLanguage();
 
   const [isFollowDriver, setIsFollowDriver] = useState<boolean>(true);
   const [isMapReady, setIsMapReady] = useState<boolean>(false);
@@ -541,19 +545,25 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }
 
     // Zoom and pan to fit the entire road route with comfortable padding only if not in active driving HUD
-    if (!isDrivingJourney) {
+    if (!isDrivingJourney && roadWaypoints.length > 0) {
       try {
-        isProgrammaticMoveRef.current = true;
-        map.fitBounds(L.latLngBounds(roadWaypoints), {
-          padding: [60, 60],
-          maxZoom: 17,
-          animate: true
-        });
-        // Set follow to false so user can freely zoom and inspect destination without snap-back!
         setIsFollowDriver(false);
+        isProgrammaticMoveRef.current = true;
+        setTimeout(() => {
+          if (!mapRef.current) return;
+          mapRef.current.invalidateSize();
+          const bounds = L.latLngBounds(roadWaypoints);
+          if (bounds.isValid()) {
+            mapRef.current.fitBounds(bounds, {
+              padding: [45, 45],
+              maxZoom: 15,
+              animate: true
+            });
+          }
+        }, 60);
         setTimeout(() => {
           isProgrammaticMoveRef.current = false;
-        }, 1000);
+        }, 1200);
       } catch {
         // fallback
       }
@@ -785,6 +795,26 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
     }, 900);
   };
 
+  const handleFitRoute = useCallback(() => {
+    if (!mapRef.current || !activeRoute?.waypoints || activeRoute.waypoints.length === 0) return;
+    const map = mapRef.current;
+    setIsFollowDriver(false);
+    isProgrammaticMoveRef.current = true;
+    map.invalidateSize();
+    const bounds = L.latLngBounds(activeRoute.waypoints);
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, {
+        padding: [30, 30],
+        maxZoom: 15,
+        animate: true,
+      });
+      showToast('Aligned camera to corridor route bounds');
+    }
+    setTimeout(() => {
+      isProgrammaticMoveRef.current = false;
+    }, 1000);
+  }, [activeRoute, showToast]);
+
   const handleJumpToCoordinates = (lat: number, lng: number, label?: string) => {
     if (!mapRef.current) return;
     mapRef.current.flyTo([lat, lng], 18, { duration: 1.0 });
@@ -816,8 +846,23 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
   const inspectBearing = calculateBearing(currentGPS.latitude, currentGPS.longitude, inspectCoord.lat, inspectCoord.lng);
   const inspectMGRS = toMGRS(inspectCoord.lat, inspectCoord.lng);
 
-  return (
-    <div className={`relative w-full ${isFullScreenMap ? 'fixed inset-0 z-50 rounded-none h-screen w-screen' : heightClass} rounded-xl overflow-hidden shadow-2xl border border-[var(--border)] bg-[var(--bg)]`}>
+  const effectiveShowControlsBar = showControlsBar || isFullScreenMap;
+
+  // Seamlessly adapt Leaflet canvas on entering/exiting Full Screen map mode
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const t1 = setTimeout(() => mapRef.current?.invalidateSize(), 50);
+    const t2 = setTimeout(() => mapRef.current?.invalidateSize(), 200);
+    const t3 = setTimeout(() => mapRef.current?.invalidateSize(), 500);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [isFullScreenMap]);
+
+  const mapContent = (
+    <div className={`relative w-full ${isFullScreenMap ? 'fixed inset-0 z-[99998] rounded-none h-screen w-screen m-0 p-0' : heightClass} rounded-xl overflow-hidden shadow-2xl border border-[var(--border)] bg-[var(--bg)]`}>
       
       {/* Target Map DOM Div */}
       <div
@@ -853,7 +898,7 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
       {showControls && (
         <>
           {/* Top-Left: High-Precision Layer Switcher */}
-          {showControlsBar && (
+          {effectiveShowControlsBar && (
             <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5">
               <div className="bg-[var(--card-glass)] backdrop-blur-md p-1 rounded-xl border border-[var(--border)] shadow-xl flex items-center gap-1">
                 <button
@@ -916,10 +961,21 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
             </div>
           )}
 
-          {/* Top-Right: Fullscreen Toggle, Quick Jump & Live Convoy Telemetry Pill */}
-          {showControlsBar && (
+          {/* Top-Right: Fullscreen Toggle, Fit Route, Quick Jump & Live Convoy Telemetry Pill */}
+          {effectiveShowControlsBar && (
             <div className="absolute top-3 right-3 z-20 flex flex-col items-end gap-1.5">
               <div className="flex items-center gap-2">
+                {activeRoute && (
+                  <button
+                    onClick={handleFitRoute}
+                    className="bg-[var(--card-glass)] hover:bg-[var(--bg-warm)] text-[var(--copper)] border border-[var(--border)] px-2.5 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 text-xs font-mono font-bold backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+                    title="Fit Camera to Route Bounds"
+                  >
+                    <Route size={14} strokeWidth={2} />
+                    <span>{t('route.fit_route')}</span>
+                  </button>
+                )}
+
                 <button
                   id="map-toggle-fullscreen-btn"
                   onClick={() => {
@@ -927,20 +983,20 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
                     setIsFullScreenMap(next);
                     showToast(next ? 'Full Map View: Maximized' : 'Exited Full Map View');
                   }}
-                  className={`px-2.5 py-1.5 rounded-xl border shadow-lg flex items-center gap-1.5 text-xs font-mono font-bold backdrop-blur-md transition-all active:scale-95 ${
+                  className={`px-3 py-1.5 rounded-xl border shadow-xl flex items-center gap-1.5 text-xs font-mono font-bold backdrop-blur-md transition-all active:scale-95 cursor-pointer ${
                     isFullScreenMap
-                      ? 'bg-[var(--copper)] text-white border-[var(--copper)] shadow-lg'
+                      ? 'bg-[var(--copper)] text-white border-[var(--copper)]'
                       : 'bg-[var(--card-glass)] hover:bg-[var(--bg-warm)] text-[var(--text)] border-[var(--border)]'
                   }`}
                   title={isFullScreenMap ? 'Exit Full Map View' : 'Full Map View (Driving View)'}
                 >
                   {isFullScreenMap ? <Minimize2 size={15} strokeWidth={2} /> : <Maximize2 size={15} strokeWidth={2} />}
-                  <span>{isFullScreenMap ? 'Exit Full' : 'Full Map'}</span>
+                  <span>{isFullScreenMap ? t('route.exit_full') : t('route.full_map')}</span>
                 </button>
 
                 <button
                   onClick={() => setShowSearchModal(true)}
-                  className="bg-[var(--card-glass)] hover:bg-[var(--bg-warm)] text-[var(--copper)] border border-[var(--border)] px-2.5 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 text-xs font-mono font-bold backdrop-blur-md transition-all active:scale-95"
+                  className="bg-[var(--card-glass)] hover:bg-[var(--bg-warm)] text-[var(--copper)] border border-[var(--border)] px-2.5 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 text-xs font-mono font-bold backdrop-blur-md transition-all active:scale-95 cursor-pointer"
                   title="Jump to Coordinate or Tactical Waypoint"
                 >
                   <Search size={14} strokeWidth={2} />
@@ -1265,4 +1321,6 @@ export const TacticalMap: React.FC<TacticalMapProps> = ({
 
     </div>
   );
+
+  return mapContent;
 };

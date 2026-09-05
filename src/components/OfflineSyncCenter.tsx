@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   Wifi,
   WifiOff,
@@ -44,6 +45,7 @@ export const OfflineSyncCenter: React.FC = () => {
     totalCachedStorageBytes,
     incidents,
   } = useApp();
+  const { t } = useLanguage();
 
   const [isAutoRadio, setIsAutoRadio] = useState<boolean>(true);
 
@@ -85,10 +87,10 @@ export const OfflineSyncCenter: React.FC = () => {
       <div className="card-glass" style={{ padding: '16px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div>
-            <div className="eyebrow">Radio Transceiver Mode</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>
-              Telemetry Uplink Controller
-            </div>
+            <div className="eyebrow">{t('sync.radio_mode')}</div>
+            <h2 className="font-title" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginTop: 2, fontFamily: 'var(--font-heading)' }}>
+              {t('sync.uplink_controller')}
+            </h2>
           </div>
           <button
             type="button"
@@ -103,7 +105,7 @@ export const OfflineSyncCenter: React.FC = () => {
             }}
           >
             <Sparkles size={11} strokeWidth={2} />
-            {isAutoRadio ? 'Auto (Adaptive)' : 'Manual Override'}
+            {isAutoRadio ? t('sync.auto_adaptive') : t('sync.manual_override')}
           </button>
         </div>
 
@@ -112,19 +114,19 @@ export const OfflineSyncCenter: React.FC = () => {
           {[
             {
               id: 'online',
-              label: 'Live RTK Uplink',
+              label: t('sync.rtk_uplink'),
               desc: isAutoRadio && networkSimulationMode === 'online' ? 'Active: Auto-routed through real network' : 'Full bandwidth · immediate cloud sync',
               icon: Wifi,
             },
             {
               id: 'spotty',
-              label: 'High-Latency Mesh',
+              label: t('sync.mesh_network'),
               desc: isAutoRadio && networkSimulationMode === 'spotty' ? 'Active: Degraded signal detected' : 'Intermittent 2G/LoRa simulated buffer',
               icon: Radio,
             },
             {
               id: 'offline',
-              label: 'Airgap Protocol',
+              label: t('sync.airgap_protocol'),
               desc: isAutoRadio && networkSimulationMode === 'offline' ? 'Active: Network down · local caching' : 'Zero radio emission · IndexedDB storage only',
               icon: WifiOff,
             },
@@ -196,13 +198,13 @@ export const OfflineSyncCenter: React.FC = () => {
       <div className="card-glass" style={{ padding: '16px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div className="eyebrow">Outbox Pipeline</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginTop: 2 }}>
-              {pendingItems.length > 0 ? `${pendingItems.length} Reports Queued (${formatBytes(totalQueuedBytes)})` : 'Outbox Cleared'}
-            </div>
+            <div className="eyebrow">{t('sync.outbox_pipeline')}</div>
+            <h2 className="font-title" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginTop: 2, fontFamily: 'var(--font-heading)' }}>
+              {pendingItems.length > 0 ? `${pendingItems.length} ${t('sync.reports_queued')} (${formatBytes(totalQueuedBytes)})` : t('sync.outbox_cleared')}
+            </h2>
             {lastSyncedTimestamp > 0 && (
               <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
-                Last synced {relativeTime(lastSyncedTimestamp)}
+                {t('sync.last_synced')} {relativeTime(lastSyncedTimestamp)}
               </div>
             )}
           </div>
@@ -214,7 +216,7 @@ export const OfflineSyncCenter: React.FC = () => {
             style={{ minHeight: 36, padding: '0 16px', fontSize: 11 }}
           >
             {isSyncing ? <Loader2 size={13} className="spinning" /> : <RefreshCw size={13} strokeWidth={2} />}
-            <span>{isSyncing ? `${syncProgress}%` : 'Sync Now'}</span>
+            <span>{isSyncing ? `${syncProgress}%` : t('sync.sync_now')}</span>
           </button>
         </div>
 
@@ -230,7 +232,7 @@ export const OfflineSyncCenter: React.FC = () => {
 
       {/* ── Storage Allocation ── */}
       <div className="card-glass" style={{ padding: '16px 18px' }}>
-        <div className="eyebrow" style={{ marginBottom: 10 }}>Local IndexedDB Cache</div>
+        <div className="eyebrow" style={{ marginBottom: 10 }}>{t('sync.local_cache')}</div>
         <div style={{ display: 'flex', height: 6, borderRadius: 'var(--radius-pill)', overflow: 'hidden', gap: 2, marginBottom: 12 }}>
           {[{ bytes: tileBytes, color: 'var(--copper)' }, { bytes: incidentBytes, color: 'var(--text)' }, { bytes: breadBytes, color: 'var(--border)' }].map(
             (seg, idx) => seg.bytes > 0 && <div key={idx} style={{ flex: seg.bytes, background: seg.color }} />
@@ -238,9 +240,9 @@ export const OfflineSyncCenter: React.FC = () => {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
           {[
-            { label: 'Map Sectors', bytes: tileBytes, dot: 'var(--copper)' },
-            { label: 'Reports', bytes: incidentBytes, dot: 'var(--text)' },
-            { label: 'Breadcrumbs', bytes: breadBytes, dot: 'var(--border)' },
+            { label: t('sync.map_sectors'), bytes: tileBytes, dot: 'var(--copper)' },
+            { label: t('sync.reports'), bytes: incidentBytes, dot: 'var(--text)' },
+            { label: t('sync.breadcrumbs'), bytes: breadBytes, dot: 'var(--border)' },
           ].map(({ label, bytes, dot }) => (
             <div key={label}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
@@ -258,8 +260,8 @@ export const OfflineSyncCenter: React.FC = () => {
       {/* ── Queued Queue Items ── */}
       <section>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: '0 2px' }}>
-          <div className="eyebrow">Outbox Buffer</div>
-          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{syncQueue.length} total entries</span>
+          <div className="eyebrow">{t('sync.outbox_buffer')}</div>
+          <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{syncQueue.length} {t('sync.total_entries')}</span>
         </div>
 
         {syncQueue.length === 0 ? (
@@ -268,7 +270,7 @@ export const OfflineSyncCenter: React.FC = () => {
             style={{ padding: '24px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
           >
             <CheckCircle2 size={22} strokeWidth={1.8} style={{ color: 'var(--text-faint)', marginBottom: 6 }} />
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>Outbox is empty</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>{t('sync.empty_outbox')}</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -298,7 +300,7 @@ export const OfflineSyncCenter: React.FC = () => {
                   />
 
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>{item.title}</div>
+                    <div className="font-title" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>{item.title}</div>
                     <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>
                       {formatBytes(item.sizeBytes)} · {relativeTime(item.timestamp)}
                       {item.retryCount > 0 && <span> · {item.retryCount} retry attempts</span>}

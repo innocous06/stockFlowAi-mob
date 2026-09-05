@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { IncidentCategory, IncidentSeverity, IncidentReport, PhotoAttachment, SyncStatusStage } from '../types';
 import { toGeoJSONPoint, evaluateGPSQuality } from '../services/gps-geojson.service';
 import { validatePhotoFile, validatePhotoCount, createPhotoAttachment } from '../services/photo-compression.service';
@@ -22,6 +24,8 @@ import {
   AlertTriangle,
   Crosshair,
   Loader2,
+  Compass,
+  User,
 } from 'lucide-react';
 
 const DISTRICT_ROAD_PRESETS = [
@@ -73,8 +77,22 @@ function getSyncBadge(stage: SyncStatusStage) {
 }
 
 export const IncidentReporting: React.FC = () => {
-  const { currentGPS, isOnline, incidents, addIncident, addQueueItem, deleteIncident, showToast, broadcastIncident } =
-    useApp();
+  const {
+    currentGPS,
+    isOnline,
+    incidents,
+    addIncident,
+    addQueueItem,
+    deleteIncident,
+    showToast,
+    broadcastIncident,
+    activateRealGPS,
+    isRealGPSFix,
+    isLocating,
+    realLocationAddress,
+  } = useApp();
+  const { currentUser } = useAuth();
+  const { t } = useLanguage();
 
   const [category, setCategory] = useState<IncidentCategory>('landslide');
   const [severity, setSeverity] = useState<IncidentSeverity>('high');
@@ -122,6 +140,20 @@ export const IncidentReporting: React.FC = () => {
     } else {
       setIsManualPinMode(false);
       showToast(`Live GPS lock active (±${Math.round(currentGPS.accuracy)}m)`);
+    }
+  };
+
+  const handleFetchLiveGPS = async () => {
+    try {
+      showToast('🛰️ Fetching live GNSS coordinates from device GPS…');
+      await activateRealGPS();
+      setManualLat(currentGPS.latitude);
+      setManualLng(currentGPS.longitude);
+      setManualAlt(currentGPS.altitude || 1420);
+      setManualAccuracy(currentGPS.accuracy || 5);
+      showToast(`🎯 Live GPS Acquired: ${currentGPS.latitude.toFixed(6)}°N, ${currentGPS.longitude.toFixed(6)}°E`);
+    } catch {
+      showToast('⚠️ Could not acquire device GPS fix. Using network coordinates.');
     }
   };
 
@@ -188,7 +220,7 @@ export const IncidentReporting: React.FC = () => {
         gps_status: gpsQuality,
         geo_json,
         locationName: districtRoadSegment,
-        reportedBy: 'Lead Operator (FL-408)',
+        reportedBy: `${currentUser.name} (${currentUser.unitId})`,
         photos: photoAttachments.map((p) => p.dataUrl || ''),
         photo_attachments: photoAttachments.map((p) => ({ ...p, report_id })),
         timestamp: Date.now(),
@@ -217,7 +249,7 @@ export const IncidentReporting: React.FC = () => {
       };
       await incidentOfflineStore.saveQueueItem({ id: `queue_${Date.now()}`, timestamp: Date.now(), ...queueItem });
       addQueueItem(queueItem);
-      showToast(`Field report ${report_id} recorded`);
+      showToast(`Field report ${report_id} recorded by ${currentUser.name}`);
 
       if (isOnline) {
         showToast('Transmitting telemetry to Operations...');
@@ -259,6 +291,17 @@ export const IncidentReporting: React.FC = () => {
           severity,
           description: `${districtRoadSegment}: ${newIncident.description}`,
           photo: broadcastThumb,
+          reportedBy: currentUser.name,
+          role: currentUser.role,
+          department: currentUser.department,
+          unitId: currentUser.unitId,
+          badge: currentUser.badge,
+          coordinates: `${activeLat.toFixed(6)}°N, ${activeLng.toFixed(6)}°E`,
+          latitude: activeLat,
+          longitude: activeLng,
+          altitude: activeAlt,
+          accuracy: activeAccuracy,
+          user: currentUser.name,
         });
       } catch {
         /* ignore */
@@ -289,8 +332,8 @@ export const IncidentReporting: React.FC = () => {
         }}
       >
         {[
-          { id: 'form', label: 'Log New Hazard', Icon: FileEdit },
-          { id: 'history', label: `Incident Log (${incidents.length})`, Icon: History },
+          { id: 'form', label: t('report.form_tab'), Icon: FileEdit },
+          { id: 'history', label: `${t('report.history_tab')} (${incidents.length})`, Icon: History },
         ].map(({ id, label, Icon }) => {
           const active = viewMode === id;
           return (
@@ -325,9 +368,51 @@ export const IncidentReporting: React.FC = () => {
 
       {viewMode === 'form' ? (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Active Reporter Identification */}
+          <div
+            className="card"
+            style={{
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+              background: 'var(--bg-warm)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: '50%',
+                  background: currentUser.avatarColor || 'var(--copper)',
+                  color: '#FFFFFF',
+                  fontSize: 11,
+                  fontWeight: 800,
+                  display: 'grid',
+                  placeItems: 'center',
+                }}
+              >
+                {currentUser.name.charAt(0)}
+              </div>
+              <div>
+                <div className="font-title" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>
+                  {currentUser.name}
+                </div>
+                <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                  {currentUser.unitId} · {currentUser.role}
+                </div>
+              </div>
+            </div>
+            <span className="pill pill-copper" style={{ fontSize: 8 }}>
+              {currentUser.badge}
+            </span>
+          </div>
+
           {/* ── Category Selector ── */}
           <div className="card-glass" style={{ padding: '16px 18px' }}>
-            <div className="eyebrow" style={{ marginBottom: 12 }}>Hazard Category</div>
+            <div className="eyebrow" style={{ marginBottom: 12 }}>{t('report.category')}</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {CATEGORIES.map(({ id, label, Icon }) => {
                 const active = category === id;
@@ -375,7 +460,7 @@ export const IncidentReporting: React.FC = () => {
 
           {/* ── Severity Level ── */}
           <div className="card-glass" style={{ padding: '16px 18px' }}>
-            <div className="eyebrow" style={{ marginBottom: 12 }}>Impact Severity</div>
+            <div className="eyebrow" style={{ marginBottom: 12 }}>{t('report.severity')}</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6 }}>
               {SEVERITIES.map(({ id, label }) => {
                 const active = severity === id;
@@ -485,15 +570,50 @@ export const IncidentReporting: React.FC = () => {
               }}
             >
               <Crosshair size={14} strokeWidth={2} style={{ color: isManualPinMode ? 'var(--warning)' : 'var(--success)' }} />
-              <div>
+              <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: isManualPinMode ? 'var(--warning)' : 'var(--success)' }}>
-                  {isManualPinMode ? 'Manual Pin Mode' : `Live GNSS Fixed · ±${activeAccuracy.toFixed(0)}m accuracy`}
+                  {isManualPinMode ? 'Manual Pin Mode' : (isRealGPSFix ? 'Live RTK Device GPS Locked' : `Live Convoy GPS · ±${activeAccuracy.toFixed(0)}m`)}
                 </div>
                 <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1 }} className="mono">
                   {activeLat.toFixed(6)}°N, {activeLng.toFixed(6)}°E · {activeAlt.toFixed(0)}m altitude
                 </div>
+                {realLocationAddress && !isManualPinMode && (
+                  <div style={{ fontSize: 9, color: 'var(--copper)', marginTop: 2, fontStyle: 'italic' }}>
+                    {realLocationAddress}
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Live GPS Fetch CTA Button */}
+            <button
+              type="button"
+              onClick={handleFetchLiveGPS}
+              disabled={isLocating}
+              className="btn btn-secondary btn-sm"
+              style={{
+                width: '100%',
+                marginTop: 8,
+                fontSize: 10,
+                fontWeight: 700,
+                gap: 6,
+                borderColor: isRealGPSFix ? 'rgba(42,122,77,0.4)' : 'var(--border)',
+                background: isRealGPSFix ? 'var(--success-10)' : 'var(--card)',
+                color: isRealGPSFix ? 'var(--success)' : 'var(--text)',
+              }}
+            >
+              {isLocating ? (
+                <>
+                  <Loader2 size={13} className="spinning" />
+                  <span>{t('report.locating_gps')}</span>
+                </>
+              ) : (
+                <>
+                  <Crosshair size={13} strokeWidth={2} />
+                  <span>{isRealGPSFix ? t('report.gps_locked') : t('report.fetch_gps')}</span>
+                </>
+              )}
+            </button>
 
             {isManualPinMode && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 10 }}>
@@ -590,12 +710,12 @@ export const IncidentReporting: React.FC = () => {
             {isSubmitting ? (
               <>
                 <Loader2 size={15} className="spinning" />
-                <span>Broadcasting Report…</span>
+                <span>{t('report.broadcast')}…</span>
               </>
             ) : (
               <>
                 <UploadCloud size={15} strokeWidth={2} />
-                <span>Submit & Broadcast Field Advisory</span>
+                <span>{t('report.broadcast')}</span>
               </>
             )}
           </button>
@@ -638,9 +758,12 @@ export const IncidentReporting: React.FC = () => {
                       }}
                     />
                     <div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>{inc.title}</div>
+                      <div className="font-title" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>{inc.title}</div>
                       <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>
                         {inc.category.replace('_', ' ')} · {inc.locationName}
+                      </div>
+                      <div style={{ fontSize: 8, color: 'var(--copper)', marginTop: 2, fontWeight: 600 }}>
+                        👤 {inc.reportedBy || 'Field Operator'} · {inc.latitude.toFixed(5)}°N, {inc.longitude.toFixed(5)}°E
                       </div>
                       {inc.photo_attachments.length > 0 && (
                         <div style={{ fontSize: 8, color: 'var(--text-faint)', marginTop: 2 }}>

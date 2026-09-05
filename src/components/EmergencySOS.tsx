@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
-import { AlertOctagon, ShieldAlert, HeartPulse, Wrench, Shield, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
+import { AlertOctagon, ShieldAlert, HeartPulse, Wrench, Shield, CheckCircle2, User } from 'lucide-react';
 
 export const EmergencySOS: React.FC = () => {
   const { currentGPS, activeSOS, triggerSOS, cancelSOS, showToast } = useApp();
+  const { currentUser } = useAuth();
+  const { t } = useLanguage();
 
   const [holdProgress, setHoldProgress] = useState(0);
   const [isHolding, setIsHolding] = useState(false);
@@ -37,8 +41,12 @@ export const EmergencySOS: React.FC = () => {
               medical: medicalNeeded,
               disabled: vehicleDisabled,
               threat: threatPresent,
+              driverName: currentUser.name,
+              vehicleId: currentUser.unitId,
+              role: currentUser.role,
+              department: currentUser.department,
             });
-            showToast('🚨 SOS Distress Transponder Activated!');
+            showToast(`🚨 SOS Distress Transponder Activated by ${currentUser.name}!`);
             return 0;
           }
           return prev + 5;
@@ -58,7 +66,7 @@ export const EmergencySOS: React.FC = () => {
         holdIntervalRef.current = null;
       }
     };
-  }, [isHolding, activeSOS, medicalNeeded, vehicleDisabled, threatPresent, triggerSOS, showToast, stopHolding]);
+  }, [isHolding, activeSOS, medicalNeeded, vehicleDisabled, threatPresent, triggerSOS, showToast, stopHolding, currentUser]);
 
   // Transmission burst interval when active
   useEffect(() => {
@@ -94,10 +102,10 @@ export const EmergencySOS: React.FC = () => {
     stopHolding();
   };
 
-  const CONDITIONS = [
-    { id: 'medical', label: 'Medical Priority', Icon: HeartPulse, active: medicalNeeded, toggle: () => setMedicalNeeded((p) => !p) },
-    { id: 'vehicle', label: 'Vehicle Breakdown', Icon: Wrench, active: vehicleDisabled, toggle: () => setVehicleDisabled((p) => !p) },
-    { id: 'threat', label: 'Route Obstacle / Threat', Icon: Shield, active: threatPresent, toggle: () => setThreatPresent((p) => !p) },
+  const conditions = [
+    { id: 'medical', label: t('sos.medical'), Icon: HeartPulse, active: medicalNeeded, toggle: () => setMedicalNeeded((p) => !p) },
+    { id: 'vehicle', label: t('sos.breakdown'), Icon: Wrench, active: vehicleDisabled, toggle: () => setVehicleDisabled((p) => !p) },
+    { id: 'threat', label: t('sos.threat'), Icon: Shield, active: threatPresent, toggle: () => setThreatPresent((p) => !p) },
   ];
 
   return (
@@ -144,13 +152,13 @@ export const EmergencySOS: React.FC = () => {
 
             <div style={{ textAlign: 'center' }}>
               <div className="eyebrow" style={{ color: 'var(--danger)', marginBottom: 3 }}>
-                Distress Transponder Live
+                {t('sos.beacon_live')}
               </div>
-              <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.3px', color: 'var(--text)' }}>
-                Broadcasting Emergency Telemetry
-              </div>
+              <h2 className="font-title" style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.3px', color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>
+                {t('sos.broadcasting_telemetry')}
+              </h2>
               <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                Real-time satellite coordinates transmitting to Operations Desk
+                {t('sos.transmitting_desk')}
               </div>
             </div>
           </div>
@@ -165,11 +173,13 @@ export const EmergencySOS: React.FC = () => {
             }}
           >
             {[
-              { label: 'Beacon ID', value: activeSOS.id, highlight: 'var(--danger)' },
-              { label: 'Assigned Unit', value: 'FL-408 · Lead Operator' },
-              { label: 'Coordinates', value: `${currentGPS.latitude.toFixed(5)}°N, ${currentGPS.longitude.toFixed(5)}°E` },
-              { label: 'Accuracy Radius', value: `±${Math.round(currentGPS.accuracy || 3)}m` },
-              { label: 'Packet Transmissions', value: `Burst #${transmissionBurst}`, highlight: 'var(--copper)' },
+              { label: t('sos.beacon_id'), value: activeSOS.id, highlight: 'var(--danger)' },
+              { label: t('sos.operator'), value: activeSOS.driverName || currentUser.name, highlight: 'var(--copper)' },
+              { label: t('sos.assigned_unit'), value: `${activeSOS.vehicleId || currentUser.unitId} (${currentUser.badge})` },
+              { label: t('sos.sector_role'), value: `${currentUser.role}` },
+              { label: t('sos.coordinates'), value: `${currentGPS.latitude.toFixed(5)}°N, ${currentGPS.longitude.toFixed(5)}°E` },
+              { label: t('sos.accuracy_radius'), value: `±${Math.round(currentGPS.accuracy || 3)}m` },
+              { label: t('sos.packet_tx'), value: `Burst #${transmissionBurst}`, highlight: 'var(--copper)' },
             ].map(({ label, value, highlight }, idx) => (
               <div
                 key={label}
@@ -205,7 +215,7 @@ export const EmergencySOS: React.FC = () => {
               borderRadius: 'var(--radius-pill)',
             }}
           >
-            Cancel Distress Signal
+            {t('sos.cancel_beacon')}
           </button>
         </div>
       ) : (
@@ -229,30 +239,72 @@ export const EmergencySOS: React.FC = () => {
                 <AlertOctagon size={18} strokeWidth={2} style={{ color: 'var(--danger)' }} />
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                  Emergency SOS Transponder
-                </div>
+                <h2 className="font-title" style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>
+                  {t('sos.title')}
+                </h2>
                 <div className="eyebrow" style={{ marginTop: 2, color: 'var(--text-muted)' }}>
-                  Safety Protocol · Unit FL-408
+                  {t('sos.safety_protocol')} · {currentUser.unitId}
                 </div>
               </div>
             </div>
             <span className="pill pill-success">
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor' }} />
-              STANDBY
+              {t('sos.standby')}
+            </span>
+          </div>
+
+          {/* Active Operator Banner */}
+          <div
+            className="card"
+            style={{
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+              background: 'var(--bg-warm)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  background: currentUser.avatarColor || 'var(--copper)',
+                  color: '#FFFFFF',
+                  fontSize: 10,
+                  fontWeight: 800,
+                  display: 'grid',
+                  placeItems: 'center',
+                }}
+              >
+                {currentUser.name.charAt(0)}
+              </div>
+              <div>
+                <div className="font-title" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>
+                  {currentUser.name}
+                </div>
+                <div style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                  {currentUser.unitId} · {currentUser.role}
+                </div>
+              </div>
+            </div>
+            <span className="pill pill-copper" style={{ fontSize: 8 }}>
+              {currentUser.badge}
             </span>
           </div>
 
           {/* Protocol Note */}
           <div style={{ fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.6, padding: '0 4px' }}>
-            In case of critical road hazard, vehicle incapacitation, or medical distress, engage the emergency transponder. High-priority telemetry will broadcast immediately to central command.
+            {t('sos.protocol_desc')}
           </div>
 
           {/* Conditions Selector */}
           <div className="card-glass" style={{ padding: '16px 18px' }}>
-            <div className="eyebrow" style={{ marginBottom: 12 }}>Distress Conditions (Optional)</div>
+            <div className="eyebrow" style={{ marginBottom: 12 }}>{t('sos.conditions_title')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {CONDITIONS.map(({ id, label, Icon, active, toggle }) => (
+              {conditions.map(({ id, label, Icon, active, toggle }) => (
                 <button
                   key={id}
                   type="button"
@@ -343,11 +395,11 @@ export const EmergencySOS: React.FC = () => {
               />
               <ShieldAlert size={16} strokeWidth={2.2} style={{ position: 'relative', zIndex: 1 }} />
               <span style={{ position: 'relative', zIndex: 1 }}>
-                {isHolding ? `HOLD TO TRANSMIT (${Math.round(holdProgress)}%)` : 'PRESS & HOLD (2S) TO TRANSMIT SOS'}
+                {isHolding ? `HOLD TO TRANSMIT (${Math.round(holdProgress)}%)` : t('sos.hold_prompt')}
               </span>
             </button>
             <div style={{ fontSize: 9, color: 'var(--text-muted)', textAlign: 'center', marginTop: 8 }}>
-              2-second hold required to prevent accidental activations during transport
+              {t('sos.hold_warning')}
             </div>
           </div>
         </>

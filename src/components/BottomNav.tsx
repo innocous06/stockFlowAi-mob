@@ -1,20 +1,22 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
 import { LayoutDashboard, Navigation, AlertTriangle, RefreshCw, Siren } from 'lucide-react';
 
 type Tab = 'driver-home' | 'resilient-navigation' | 'incident-reporting' | 'offline-sync-center' | 'emergency-sos';
 
-const NAV_ITEMS: { id: Tab; label: string; Icon: React.ElementType }[] = [
-  { id: 'driver-home',          label: 'Home',    Icon: LayoutDashboard },
-  { id: 'resilient-navigation', label: 'Map',     Icon: Navigation },
-  { id: 'incident-reporting',   label: 'Report',  Icon: AlertTriangle },
-  { id: 'offline-sync-center',  label: 'Sync',    Icon: RefreshCw },
-  { id: 'emergency-sos',        label: 'SOS',     Icon: Siren },
-];
-
 export const BottomNav: React.FC = () => {
   const { currentTab, setCurrentTab } = useApp();
+  const { t } = useLanguage();
+
+  const navItems: { id: Tab; label: string; Icon: React.ElementType }[] = [
+    { id: 'driver-home',          label: t('nav.home'),    Icon: LayoutDashboard },
+    { id: 'resilient-navigation', label: t('nav.map'),     Icon: Navigation },
+    { id: 'incident-reporting',   label: t('nav.report'),  Icon: AlertTriangle },
+    { id: 'offline-sync-center',  label: t('nav.sync'),    Icon: RefreshCw },
+    { id: 'emergency-sos',        label: t('nav.sos'),     Icon: Siren },
+  ];
 
   return (
     <nav style={{
@@ -29,7 +31,7 @@ export const BottomNav: React.FC = () => {
       alignItems: 'stretch',
       zIndex: 100,
     }}>
-      {NAV_ITEMS.map(({ id, label, Icon }) => {
+      {navItems.map(({ id, label, Icon }) => {
         const active = currentTab === id;
         const isSOS  = id === 'emergency-sos';
 

@@ -79,9 +79,16 @@ interface AppContextType {
   createIncident: (incident: Omit<IncidentReport, 'id' | 'timestamp' | 'syncStatus'>) => Promise<IncidentReport>;
   addIncident: (incident: IncidentReport) => Promise<void>;
   deleteIncident: (id: string) => void;
-  // SOS
   activeSOS: SOSEvent | null;
-  triggerSOS: (options?: { medical?: boolean; disabled?: boolean; threat?: boolean }) => Promise<void>;
+  triggerSOS: (options?: {
+    medical?: boolean;
+    disabled?: boolean;
+    threat?: boolean;
+    driverName?: string;
+    vehicleId?: string;
+    role?: string;
+    department?: string;
+  }) => Promise<void>;
   triggerReport: () => Promise<void>;
   broadcastIncident: (payload: any) => Promise<void>;
   cancelSOS: () => void;
@@ -104,7 +111,8 @@ interface AppContextType {
   setMapLayer: (layer: MapLayerType) => void;
   // Notification Toast
   toastMessage: string | null;
-  showToast: (msg: string) => void;
+  showToast: (msg: string, durationMs?: number) => void;
+  dismissToast: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -182,12 +190,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const toastTimerRef = useRef<any>(null);
-  const showToast = useCallback((msg: string) => {
+  const dismissToast = useCallback(() => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastMessage(null);
+  }, []);
+
+  const showToast = useCallback((msg: string, durationMs?: number) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastMessage(msg);
+    const isNetworkToast =
+      msg.toLowerCase().includes('network') ||
+      msg.toLowerCase().includes('satellite') ||
+      msg.toLowerCase().includes('uplink') ||
+      msg.toLowerCase().includes('established') ||
+      msg.toLowerCase().includes('connected');
+    const delay = durationMs ?? (isNetworkToast ? 1500 : 2500);
     toastTimerRef.current = setTimeout(() => {
       setToastMessage(null);
-    }, 3500);
+    }, delay);
   }, []);
 
   // Supabase Realtime Listener with phone lock / reconnect resilience
@@ -208,18 +228,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     channel
       .on('broadcast', { event: 'sos' }, (payload: any) => {
-        const user = payload?.payload?.user || 'Unknown Unit';
+        const user = payload?.payload?.user || 'Operator';
+        const role = payload?.payload?.role ? `(${payload.payload.role})` : '';
         const coords = payload?.payload?.coordinates ? `at ${payload.payload.coordinates}` : '';
-        showToast(`🚨 INCOMING SOS RECEIVED: User ${user} ${coords}`);
+        showToast(`🚨 INCOMING SOS: ${user} ${role} ${coords}`);
       })
       .on('broadcast', { event: 'report' }, (payload: any) => {
-        showToast(`📋 INCOMING REPORT: ${payload?.payload?.message || 'Field report received'}`);
+        const msg = payload?.payload?.message || 'Field report received';
+        const user = payload?.payload?.user ? ` [${payload.payload.user}]` : '';
+        showToast(`📋 INCOMING REPORT: ${msg}${user}`);
       })
       .on('broadcast', { event: 'incident' }, (payload: any) => {
         const data = payload?.payload || {};
         const incTitle = data.title || 'Road Obstacle';
         const incCat = data.category || 'hazard';
-        showToast(`⚠️ INCOMING INCIDENT: ${incTitle} (${incCat})`);
+        const repBy = data.reportedBy ? `by ${data.reportedBy}` : (data.user ? `by ${data.user}` : '');
+        showToast(`⚠️ INCOMING HAZARD: ${incTitle} (${incCat}) ${repBy}`);
         
         if (data.messageId) {
           setIncidents((prev) => {
@@ -875,12 +899,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // SOS Emergency protocol
-  const triggerSOS = async (options?: { medical?: boolean; disabled?: boolean; threat?: boolean }) => {
+  const triggerSOS = async (options?: {
+    medical?: boolean;
+    disabled?: boolean;
+    threat?: boolean;
+    driverName?: string;
+    vehicleId?: string;
+    role?: string;
+    department?: string;
+  }) => {
+    const driver = options?.driverName || 'Vikram Sharma';
+    const unit = options?.vehicleId || 'CONVOY-ECHO-07';
     const event: SOSEvent = {
       id: `SOS-${Date.now()}`,
       activatedAt: Date.now(),
-      driverName: 'Sgt. J. Vance',
-      vehicleId: 'UNIT-ECHO-07',
+      driverName: driver,
+      vehicleId: unit,
       latitude: currentGPS.latitude,
       longitude: currentGPS.longitude,
       altitude: currentGPS.altitude || 3048,
@@ -898,7 +932,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         await channelRef.current.send({
           type: 'broadcast',
           event: 'sos',
-          payload: { user: event.driverName, coordinates: `${event.latitude}, ${event.longitude}` },
+          payload: {
+            user: event.driverName,
+            role: options?.role || 'Senior Logistics Officer',
+            unitId: event.vehicleId,
+            department: options?.department || 'Guwahati Hub',
+            coordinates: `${event.latitude.toFixed(6)}°N, ${event.longitude.toFixed(6)}°E`,
+            latitude: event.latitude,
+            longitude: event.longitude,
+          },
         });
       } catch (e) {
         console.warn('[Supabase Realtime] SOS broadcast error:', e);
@@ -1027,7 +1069,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         mapLayer,
         setMapLayer,
         toastMessage,
-        showToast
+        showToast,
+        dismissToast,
       }}
     >
       {children}

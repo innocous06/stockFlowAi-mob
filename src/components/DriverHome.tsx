@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { useApp } from '../context/AppContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
   MapPin,
   Clock,
@@ -27,6 +28,7 @@ export const DriverHome: React.FC = () => {
     isOnline,
     networkSimulationMode,
   } = useApp();
+  const { t } = useLanguage();
 
   const pendingCount = syncQueue.filter((i) => i.status === 'pending' || i.status === 'failed').length;
   const activeIncidents = incidents.filter((i) => i.syncStatus !== 'failed');
@@ -51,10 +53,10 @@ export const DriverHome: React.FC = () => {
       <div className="card-glass" style={{ padding: '18px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
           <div>
-            <div className="eyebrow" style={{ marginBottom: 4 }}>Designated Transit Corridor</div>
-            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.25, color: 'var(--text)' }}>
-              {activeRoute?.name ?? 'No route assigned'}
-            </div>
+            <div className="eyebrow" style={{ marginBottom: 4 }}>{t('home.designated_corridor')}</div>
+            <h2 className="font-title" style={{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.3px', lineHeight: 1.25, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>
+              {activeRoute?.name ?? t('home.no_route')}
+            </h2>
             <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
               <MapPin size={12} strokeWidth={2} style={{ color: 'var(--copper)' }} />
               {activeRoute?.destination ?? '—'}
@@ -79,9 +81,9 @@ export const DriverHome: React.FC = () => {
           }}
         >
           {[
-            { label: 'Clearance', value: `${CLEARANCE_PCT}%`, sub: 'Sector pass rate' },
-            { label: 'Distance', value: `${DIST_KM} km`, sub: 'Direct route' },
-            { label: 'Outbox', value: pendingCount > 0 ? `${pendingCount} queued` : 'Synchronized', sub: 'Buffered updates' },
+            { label: t('home.clearance'), value: `${CLEARANCE_PCT}%`, sub: t('home.sector_pass_rate') },
+            { label: t('home.distance'), value: `${DIST_KM} km`, sub: t('home.direct_route') },
+            { label: t('home.outbox'), value: pendingCount > 0 ? `${pendingCount} ${t('home.queued')}` : t('home.synchronized'), sub: t('home.buffered_updates') },
           ].map(({ label, value, sub }) => (
             <div
               key={label}
@@ -122,7 +124,7 @@ export const DriverHome: React.FC = () => {
             borderRadius: 'var(--radius-pill)',
           }}
         >
-          <span>Engage Corridor Navigation</span>
+          <span>{t('home.engage_navigation')}</span>
           <ChevronRight size={14} strokeWidth={2.5} />
         </button>
       </div>
@@ -131,14 +133,14 @@ export const DriverHome: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {[
           {
-            eyebrow: 'Live Speed',
+            eyebrow: t('home.live_speed'),
             value: `${Math.round(speedKph)}`,
             unit: 'km/h',
             icon: <Gauge size={15} strokeWidth={2} style={{ color: 'var(--copper)' }} />,
-            sub: 'GNSS telemetry stream',
+            sub: t('home.gnss_stream'),
           },
           {
-            eyebrow: 'Barometric Altitude',
+            eyebrow: t('home.altitude'),
             value: `${Math.round(altM)}`,
             unit: 'm',
             icon: <TrendingUp size={15} strokeWidth={2} style={{ color: 'var(--copper)' }} />,
@@ -179,16 +181,16 @@ export const DriverHome: React.FC = () => {
           </div>
           <div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Transit Estimate
+              {t('home.transit_estimate')}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 700, marginTop: 1, color: 'var(--text)' }}>
+            <div className="font-title" style={{ fontSize: 14, fontWeight: 700, marginTop: 1, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>
               ~{activeRoute.estMinutes} min transit &nbsp;·&nbsp; {activeRoute.distanceKm} km
             </div>
           </div>
           <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-            <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Hazards</div>
+            <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{t('home.hazards')}</div>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginTop: 1 }}>
-              {activeRoute.hazardCount} noted
+              {activeRoute.hazardCount} {t('home.noted')}
             </div>
           </div>
         </div>
@@ -197,14 +199,14 @@ export const DriverHome: React.FC = () => {
       {/* ── Recent Reports ── */}
       <section>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: '0 2px' }}>
-          <div className="eyebrow">Field Telemetry Feed</div>
+          <div className="eyebrow">{t('home.field_feed')}</div>
           <button
             type="button"
             className="btn btn-ghost btn-sm"
             onClick={() => setCurrentTab('incident-reporting')}
             style={{ fontSize: 10 }}
           >
-            View all ({incidents.length}) <ChevronRight size={11} />
+            {t('home.view_all')} ({incidents.length}) <ChevronRight size={11} />
           </button>
         </div>
 
@@ -232,13 +234,13 @@ export const DriverHome: React.FC = () => {
                   }}
                 />
                 <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>{inc.title}</div>
+                  <div className="font-title" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>{inc.title}</div>
                   <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1 }}>
                     {CATEGORY_LABEL[inc.category] ?? inc.category} · {inc.locationName}
                   </div>
                 </div>
                 <span className={`pill ${inc.syncStatus === 'synced' ? 'pill-success' : 'pill-muted'}`}>
-                  {inc.syncStatus === 'synced' ? 'Synced' : 'Queued'}
+                  {inc.syncStatus === 'synced' ? t('home.synced') : t('home.queued')}
                 </span>
               </div>
             ))}
@@ -249,7 +251,7 @@ export const DriverHome: React.FC = () => {
             style={{ padding: '24px 16px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
           >
             <AlertTriangle size={22} strokeWidth={1.8} style={{ color: 'var(--text-faint)', marginBottom: 6 }} />
-            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>No hazards reported in this sector</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>{t('home.no_hazards')}</div>
           </div>
         )}
       </section>
