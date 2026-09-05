@@ -427,7 +427,9 @@ export const IncidentReporting: React.FC = () => {
 
           {/* ── Category Selector ── */}
           <div className="card-glass" style={{ padding: '16px 18px' }}>
-            <div className="eyebrow" style={{ marginBottom: 12 }}>{t('report.category')}</div>
+            <h3 className="font-title" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12, fontFamily: 'var(--font-heading)' }}>
+              {t('report.category')}
+            </h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {CATEGORIES.map(({ id, label, Icon }) => {
                 const active = category === id;
@@ -650,7 +652,9 @@ export const IncidentReporting: React.FC = () => {
           {/* ── Photographic Evidence ── */}
           <div className="card-glass" style={{ padding: '16px 18px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div className="eyebrow">Field Evidence Photos</div>
+              <h3 className="font-title" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>
+                Field Evidence Photos
+              </h3>
               <label
                 className="btn btn-secondary btn-sm"
                 style={{ cursor: 'pointer' }}

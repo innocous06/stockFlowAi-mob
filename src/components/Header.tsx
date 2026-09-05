@@ -104,13 +104,17 @@ export const Header: React.FC<HeaderProps> = ({ currentTab }) => {
           }}>
             {currentUser.name.charAt(0)}
           </div>
-          <span style={{
-            fontSize: 10,
-            fontWeight: 700,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
+          <span
+            className="font-title"
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              fontFamily: 'var(--font-heading)',
+            }}
+          >
             {currentUser.name.split(' ')[0]}
           </span>
         </motion.button>

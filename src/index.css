@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,600&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap');
 @import "tailwindcss";
 
 /* ── StockFlow Mobile Design System ── */
@@ -39,8 +40,8 @@
   --border:       #E2DDD5;
   --border-soft:  rgba(226, 221, 213, 0.65);
 
-  /* Typography Stacks */
-  --font-heading: 'Lyon Text', 'Lyon', 'Lyon Display', 'Newsreader', Georgia, Cambria, 'Times New Roman', serif;
+  /* Typography Stacks (Lyon Text primary serif with Newsreader and Lora fallbacks) */
+  --font-heading: 'Lyon Text', 'Lyon', 'Lyon Display', 'Newsreader', 'Lora', Georgia, Cambria, 'Times New Roman', serif;
   --font-sans:    'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 
   --text:         #1C1B1A;
@@ -146,12 +147,20 @@ html, body, #root {
 /* Main Titles & Headings in Lyon Text */
 h1, h2, h3, h4, h5, h6,
 .font-title,
+.font-heading,
+.font-lyon,
 .title-lyon,
 .main-title,
 .brand-title,
 .page-title,
 .card-title,
-.section-title {
+.section-title,
+.item-title,
+.modal-title,
+.dialog-title,
+.operator-title,
+.operator-name,
+[data-font="lyon"] {
   font-family: var(--font-heading) !important;
   letter-spacing: -0.018em;
 }

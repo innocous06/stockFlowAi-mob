@@ -435,7 +435,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
             }}
           >
             <Sparkles size={11} />
-            <span>1-Tap Quick Operator Shortcuts</span>
+            <span className="font-title" style={{ fontFamily: 'var(--font-heading)' }}>1-Tap Quick Operator Shortcuts</span>
           </div>
           <div
             style={{
@@ -492,12 +492,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
                   </div>
                   <div style={{ minWidth: 0, overflow: 'hidden' }}>
                     <div
+                      className="font-title"
                       style={{
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: 700,
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
+                        fontFamily: 'var(--font-heading)',
                       }}
                     >
                       {u.name}
@@ -662,7 +664,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
       <div className="card" style={{ padding: '14px 16px', background: 'var(--bg-warm)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
           <Sparkles size={14} style={{ color: 'var(--copper)' }} />
-          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text)' }}>
+          <div className="font-title" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>
             Quick Demo Accounts in Database
           </div>
         </div>
@@ -710,7 +712,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
                   )}
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div className="font-title" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-heading)' }}>
                     {user.name}
                   </div>
                   <div style={{ fontSize: 8, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

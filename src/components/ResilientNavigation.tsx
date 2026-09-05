@@ -239,7 +239,7 @@ export const ResilientNavigation: React.FC = () => {
               />
             </div>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>
+              <div className="font-title" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>
                 {isRealGPSFix ? 'Device GPS Lock · RTK Sub-meter' : 'Simulated Convoy GPS'}
               </div>
               <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 1 }} className="mono">
@@ -428,7 +428,9 @@ export const ResilientNavigation: React.FC = () => {
 
       {/* ── Road Route Planner ── */}
       <div className="card-glass" style={{ padding: '16px 18px', position: 'relative' }}>
-        <div className="eyebrow" style={{ marginBottom: 10 }}>{t('route.planner_title')}</div>
+        <h2 className="font-title" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 10, fontFamily: 'var(--font-heading)' }}>
+          {t('route.planner_title')}
+        </h2>
 
         {/* Live Search Input with Nominatim Geocoder */}
         <div style={{ position: 'relative', marginBottom: 10 }}>
@@ -535,7 +537,7 @@ export const ResilientNavigation: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                       <MapPin size={13} strokeWidth={2} style={{ color: 'var(--copper)', flexShrink: 0 }} />
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div className="font-title" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font-heading)' }}>
                           {item.name}
                         </div>
                         <div style={{ fontSize: 9, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -627,7 +629,7 @@ export const ResilientNavigation: React.FC = () => {
 
       {/* ── Pre-configured Tactical Routes ── */}
       <section>
-        <div className="eyebrow" style={{ marginBottom: 8, padding: '0 2px' }}>Verified Sector Routes</div>
+        <h2 className="font-title" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 8, padding: '0 2px', fontFamily: 'var(--font-heading)' }}>Verified Sector Routes</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {TACTICAL_ROUTES.map((route) => {
             const isActive = activeRoute?.id === route.id;
