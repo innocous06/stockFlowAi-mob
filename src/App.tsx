@@ -12,6 +12,7 @@ import { EmergencySOS } from './components/EmergencySOS';
 import { ActiveDrivingHUD } from './components/ActiveDrivingHUD';
 import { AuthPage } from './components/AuthPage';
 import { RouteBlockedModal } from './components/RouteBlockedModal';
+import { SplashScreen } from './components/SplashScreen';
 
 // Theme context
 export const ThemeContext = React.createContext<{
@@ -122,6 +123,8 @@ export default function App() {
     try { return localStorage.getItem('sf-theme') === 'dark'; } catch { return false; }
   });
 
+  const [showSplash, setShowSplash] = useState(true);
+
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
@@ -145,6 +148,7 @@ export default function App() {
       <LanguageProvider>
         <AuthProvider>
           <AppProvider>
+            {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
             <MainContent />
           </AppProvider>
         </AuthProvider>

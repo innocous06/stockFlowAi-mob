@@ -419,7 +419,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
           </div>
         )}
 
-        {/* Quick 1-Tap Operator Shortcuts Grid */}
+        {/* 1-Tap Operator Shortcuts Grid */}
         <div style={{ marginBottom: 16 }}>
           <div
             style={{
@@ -435,7 +435,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
             }}
           >
             <Sparkles size={11} />
-            <span className="font-title" style={{ fontFamily: 'var(--font-heading)' }}>1-Tap Quick Operator Shortcuts</span>
+            <span className="font-title" style={{ fontFamily: 'var(--font-heading)' }}>1-Tap Operator Access</span>
           </div>
           <div
             style={{
@@ -474,7 +474,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
                     e.currentTarget.style.borderColor = 'var(--border)';
                     e.currentTarget.style.background = 'var(--card)';
                   }}
-                  title={`Quick Sign In: ${u.name} (${u.badge})`}
+                  title={`Sign in as ${u.name}`}
                 >
                   <div
                     style={{
@@ -568,22 +568,19 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
 
           {/* Password Input */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <label
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  color: 'var(--text-muted)',
-                }}
-              >
-                Password
-              </label>
-              <span style={{ fontSize: 9, color: 'var(--copper)', fontWeight: 600 }}>
-                Default: password123
-              </span>
-            </div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: 10,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                color: 'var(--text-muted)',
+                marginBottom: 6,
+              }}
+            >
+              Password
+            </label>
             <div style={{ position: 'relative' }}>
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -660,73 +657,6 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
         </form>
       </div>
 
-      {/* Quick Demo Access Accordion / Grid */}
-      <div className="card" style={{ padding: '14px 16px', background: 'var(--bg-warm)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-          <Sparkles size={14} style={{ color: 'var(--copper)' }} />
-          <div className="font-title" style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-heading)' }}>
-            Quick Demo Accounts in Database
-          </div>
-        </div>
-        <div style={{ fontSize: 9, color: 'var(--text-muted)', marginBottom: 10 }}>
-          Tap any pre-registered operator to instantly sign in with full credentials:
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {allUsers.map((user) => (
-            <button
-              key={user.id}
-              type="button"
-              onClick={() => handleQuickDemoClick(user)}
-              disabled={loading}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '8px 10px',
-                borderRadius: 'var(--radius-card)',
-                border: '1px solid var(--border)',
-                background: 'var(--card)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--copper)')}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                <div
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: '50%',
-                    background: user.avatarColor || 'var(--copper)',
-                    color: '#FFFFFF',
-                    display: 'grid',
-                    placeItems: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  {USER_ICONS[user.id] || (
-                    <span style={{ fontSize: 9, fontWeight: 800 }}>{user.name.charAt(0)}</span>
-                  )}
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <div className="font-title" style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-heading)' }}>
-                    {user.name}
-                  </div>
-                  <div style={{ fontSize: 8, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {user.role} · {user.unitId}
-                  </div>
-                </div>
-              </div>
-              <span className="pill pill-copper" style={{ fontSize: 8, flexShrink: 0, marginLeft: 6 }}>
-                {user.badge}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   </div>
 );
