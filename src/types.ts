@@ -219,3 +219,23 @@ export interface SOSEvent {
   status: 'broadcasting' | 'acknowledged' | 'dispatched' | 'cancelled';
   satelliteBurstTransmitted: boolean;
 }
+
+export interface BlockedRouteAlert {
+  id: string;
+  title: string;
+  category: string;
+  severity: string;
+  description: string;
+  districtRoadSegment?: string;
+  reportedBy: string;
+  reporterRole?: string;
+  reporterUnitId?: string;
+  reporterBadge?: string;
+  coordinates: string;
+  latitude: number;
+  longitude: number;
+  photo?: string | null;
+  affectedRouteName: string;
+  timestamp: number;
+}
+

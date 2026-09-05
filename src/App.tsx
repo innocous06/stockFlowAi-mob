@@ -11,6 +11,7 @@ import { OfflineSyncCenter } from './components/OfflineSyncCenter';
 import { EmergencySOS } from './components/EmergencySOS';
 import { ActiveDrivingHUD } from './components/ActiveDrivingHUD';
 import { AuthPage } from './components/AuthPage';
+import { RouteBlockedModal } from './components/RouteBlockedModal';
 
 // Theme context
 export const ThemeContext = React.createContext<{
@@ -19,7 +20,15 @@ export const ThemeContext = React.createContext<{
 }>({ isDark: false, toggleTheme: () => {} });
 
 const MainContent: React.FC = () => {
-  const { currentTab, toastMessage, isDrivingJourney, dismissToast, isFullScreenMap } = useApp();
+  const {
+    currentTab,
+    toastMessage,
+    isDrivingJourney,
+    dismissToast,
+    isFullScreenMap,
+    blockedRouteAlert,
+    dismissBlockedRouteAlert,
+  } = useApp();
   const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
@@ -94,6 +103,14 @@ const MainContent: React.FC = () => {
           <div style={{ flex: 1 }}>{toastMessage}</div>
           <span style={{ fontSize: 10, opacity: 0.6, padding: '2px 4px', userSelect: 'none' }}>✕</span>
         </div>
+      )}
+
+      {/* Persistent Tactical Route Blocked Hazard Alert Modal (with Sound Klaxon Alarm) */}
+      {blockedRouteAlert && (
+        <RouteBlockedModal
+          alert={blockedRouteAlert}
+          onAcknowledge={dismissBlockedRouteAlert}
+        />
       )}
     </div>
   );

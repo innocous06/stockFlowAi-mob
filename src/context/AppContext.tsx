@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { AppTab, GPSPosition, IncidentReport, MapTilePackage, SOSEvent, SyncQueueItem, Waypoint, RouteOption, MapLayerType } from '../types';
+import { AppTab, GPSPosition, IncidentReport, MapTilePackage, SOSEvent, SyncQueueItem, Waypoint, RouteOption, MapLayerType, BlockedRouteAlert } from '../types';
 import { supabase } from '../services/supabase';
 import { 
   getStoredSyncQueue, 
@@ -28,6 +28,7 @@ import { calculateBearing, calculateDistanceMeters } from '../services/gps-geojs
 import { connectivityService } from '../services/connectivity.service';
 import { incidentOfflineStore } from '../services/incident-offline-store.service';
 import { incidentSyncService } from '../services/incident-sync.service';
+import { startRouteBlockedAlarm, stopRouteBlockedAlarm } from '../services/alert-sound.service';
 
 interface AppContextType {
   currentTab: AppTab;
@@ -113,6 +114,10 @@ interface AppContextType {
   toastMessage: string | null;
   showToast: (msg: string, durationMs?: number) => void;
   dismissToast: () => void;
+  // Route Blocked Critical Alert
+  blockedRouteAlert: BlockedRouteAlert | null;
+  dismissBlockedRouteAlert: () => void;
+  triggerRouteBlockedDemo: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -188,6 +193,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [activeSOS, setActiveSOS] = useState<SOSEvent | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [blockedRouteAlert, setBlockedRouteAlert] = useState<BlockedRouteAlert | null>(null);
+
+  const dismissBlockedRouteAlert = useCallback(() => {
+    stopRouteBlockedAlarm();
+    setBlockedRouteAlert(null);
+  }, []);
 
   const toastTimerRef = useRef<any>(null);
   const dismissToast = useCallback(() => {
@@ -209,6 +220,120 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setToastMessage(null);
     }, delay);
   }, []);
+
+  // Live refs to guarantee latest active route and driving state in async callbacks
+  const activeRouteRef = useRef<RouteOption | null>(activeRoute);
+  useEffect(() => {
+    activeRouteRef.current = activeRoute;
+  }, [activeRoute]);
+
+  const isDrivingJourneyRef = useRef<boolean>(isDrivingJourney);
+  useEffect(() => {
+    isDrivingJourneyRef.current = isDrivingJourney;
+  }, [isDrivingJourney]);
+
+  const checkAndTriggerRouteBlockedAlert = useCallback((data: any) => {
+    if (!data) return;
+
+    const currentRoute = activeRouteRef.current || activeRoute;
+    if (!currentRoute) return;
+
+    const activeName = (currentRoute.name || '').toLowerCase();
+    const activeSeg = (currentRoute.roadSegment || '').toLowerCase();
+    const activeDest = (currentRoute.destination || '').toLowerCase();
+
+    const incTitle = (data.title || '').toLowerCase();
+    const incDesc = (data.description || '').toLowerCase();
+    const incSeg = (data.district_road_segment || data.locationName || '').toLowerCase();
+
+    // Corridor and segment matching logic
+    const isNameMatch =
+      (activeSeg && (incDesc.includes(activeSeg) || incSeg.includes(activeSeg) || incTitle.includes(activeSeg))) ||
+      (activeDest && (incDesc.includes(activeDest) || incSeg.includes(activeDest))) ||
+      activeName.split(' ').some((w: string) => w.length > 4 && (incDesc.includes(w.toLowerCase()) || incSeg.includes(w.toLowerCase())));
+
+    let isCoordNearRoute = false;
+    if (data.latitude && data.longitude && currentRoute.waypoints?.length > 0) {
+      for (const wp of currentRoute.waypoints) {
+        const distM = calculateDistanceMeters(wp[0], wp[1], data.latitude, data.longitude);
+        if (distM <= 35000) { // within 35 km corridor buffer
+          isCoordNearRoute = true;
+          break;
+        }
+      }
+    }
+
+    // Trigger if on the same route or if user is currently navigating the corridor
+    if (isNameMatch || isCoordNearRoute || isDrivingJourneyRef.current) {
+      const repName = data.reportedBy || data.user || 'Field Operator Ahead';
+      const alertItem: BlockedRouteAlert = {
+        id: data.messageId || `BLK-${Date.now()}`,
+        title: data.title || 'Critical Road Obstacle',
+        category: data.category || 'roadblock',
+        severity: data.severity || 'critical',
+        description: data.description || 'Severe obstacle obstructing traffic lanes along active corridor.',
+        districtRoadSegment: data.district_road_segment || data.locationName || currentRoute.roadSegment || currentRoute.name,
+        reportedBy: repName,
+        reporterRole: data.role || 'Field Road Safety Inspector',
+        reporterUnitId: data.unitId || 'Convoy Unit',
+        reporterBadge: data.badge || 'SAFETY INSP',
+        coordinates: data.coordinates || `${(data.latitude || currentGPS.latitude).toFixed(6)}°N, ${(data.longitude || currentGPS.longitude).toFixed(6)}°E`,
+        latitude: data.latitude || currentGPS.latitude,
+        longitude: data.longitude || currentGPS.longitude,
+        photo: data.photo || null,
+        affectedRouteName: currentRoute.name,
+        timestamp: Date.now(),
+      };
+
+      setBlockedRouteAlert(alertItem);
+      startRouteBlockedAlarm(data.title || 'Road Hazard', repName);
+    }
+  }, [activeRoute, currentGPS]);
+
+  // Inter-tab / local mesh broadcast listener
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('BroadcastChannel' in window)) return;
+    const bc = new BroadcastChannel('stockflow_fleet_mesh');
+    bc.onmessage = (event) => {
+      if (event.data?.type === 'incident' && event.data?.payload) {
+        checkAndTriggerRouteBlockedAlert(event.data.payload);
+      }
+    };
+    return () => {
+      bc.close();
+    };
+  }, [checkAndTriggerRouteBlockedAlert]);
+
+  const triggerRouteBlockedDemo = useCallback(() => {
+    const route = activeRouteRef.current || activeRoute || TACTICAL_ROUTES[0];
+    const firstWp = route.waypoints?.[0] || [currentGPS.latitude, currentGPS.longitude];
+    const demoPayload = {
+      messageId: `INC-DEMO-${Date.now()}`,
+      title: 'Landslide & Rockfall Lane Block',
+      category: 'landslide',
+      severity: 'critical',
+      district_road_segment: route.roadSegment || `${route.name} (Mile 14)`,
+      description: `Massive boulder collapse completely blocking road corridor on ${route.name}. Convoy transit is halted. Immediate rerouting advised.`,
+      reportedBy: 'Ananya Roy',
+      role: 'PWD Road Safety Inspector',
+      unitId: 'PWD-INSP-12',
+      badge: 'PWD INSPECTOR',
+      latitude: firstWp[0],
+      longitude: firstWp[1],
+      coordinates: `${firstWp[0].toFixed(6)}°N, ${firstWp[1].toFixed(6)}°E`,
+      photo: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=600&q=80',
+    };
+    // Broadcast to other tabs/devices
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('stockflow_fleet_mesh');
+        bc.postMessage({ type: 'incident', payload: demoPayload });
+        bc.close();
+      }
+    } catch {}
+    // Trigger locally
+    checkAndTriggerRouteBlockedAlert(demoPayload);
+  }, [activeRoute, currentGPS, checkAndTriggerRouteBlockedAlert]);
 
   // Supabase Realtime Listener with phone lock / reconnect resilience
   const channelRef = useRef<any>(null);
@@ -244,6 +369,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const incCat = data.category || 'hazard';
         const repBy = data.reportedBy ? `by ${data.reportedBy}` : (data.user ? `by ${data.user}` : '');
         showToast(`⚠️ INCOMING HAZARD: ${incTitle} (${incCat}) ${repBy}`);
+        
+        // Evaluate if this hazard blocks current active route and sound emergency warning
+        checkAndTriggerRouteBlockedAlert(data);
         
         if (data.messageId) {
           setIncidents((prev) => {
@@ -994,6 +1122,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('[Supabase Realtime] Incident broadcast error:', e);
       }
     }
+
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('stockflow_fleet_mesh');
+        bc.postMessage({ type: 'incident', payload });
+        bc.close();
+      }
+    } catch {}
   };
 
   const cancelSOS = () => {
@@ -1072,6 +1208,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toastMessage,
         showToast,
         dismissToast,
+        blockedRouteAlert,
+        dismissBlockedRouteAlert,
+        triggerRouteBlockedDemo,
       }}
     >
       {children}
