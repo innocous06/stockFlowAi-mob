@@ -14,7 +14,8 @@ import {
   getStoredTrackLog, 
   saveStoredTrackLog, 
   getLastSyncTime, 
-  setLastSyncTime 
+  setLastSyncTime,
+  purgeIncidentAndSOSStorage
 } from '../services/storage';
 import { TACTICAL_ROUTES } from '../services/mockData';
 import { 
@@ -488,20 +489,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [initRealtimeChannel]);
 
-  // Load IndexedDB incidents on startup and sync state
+  // Purge incident reports and SOS history from IndexedDB and storage on startup
   useEffect(() => {
-    incidentOfflineStore.getAllIncidents().then((idbIncidents) => {
-      if (idbIncidents && idbIncidents.length > 0) {
-        setIncidents((prev) => {
-          const map = new Map<string, IncidentReport>();
-          prev.forEach((i) => map.set(i.report_id || i.id, i));
-          idbIncidents.forEach((i) => map.set(i.report_id || i.id, i));
-          const merged = Array.from(map.values()).sort((a, b) => b.timestamp - a.timestamp);
-          saveStoredIncidents(merged);
-          return merged;
-        });
-      }
-    }).catch((err) => console.warn('Could not read IndexedDB incidents:', err));
+    purgeIncidentAndSOSStorage();
+    incidentOfflineStore
+      .purgeIncidentsAndSOS()
+      .then(() => {
+        setIncidents([]);
+        saveStoredIncidents([]);
+        setSyncQueue((prev) =>
+          prev.filter((item) => {
+            const isIncident =
+              item.type === 'incident' ||
+              item.report_id?.startsWith('IR-') ||
+              item.title?.toLowerCase().includes('incident');
+            const isSOS =
+              item.type === 'telemetry' ||
+              item.report_id?.startsWith('SOS-') ||
+              item.title?.toLowerCase().includes('distress');
+            return !isIncident && !isSOS;
+          })
+        );
+        setActiveSOS(null);
+        setBlockedRouteAlert(null);
+      })
+      .catch((err) => console.warn('Could not purge IndexedDB incidents:', err));
   }, []);
 
   const triggerRecenterOnUser = useCallback(() => {

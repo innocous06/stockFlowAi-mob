@@ -256,6 +256,37 @@ class IncidentOfflineStoreService {
   }
 
   /**
+   * Specifically purges all incident reports, photo attachments, server revisions,
+   * and any sync queue entries for incidents and SOS distress events.
+   * Keeps other stores and non-incident data intact.
+   */
+  public async purgeIncidentsAndSOS(): Promise<void> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction([STORES.INCIDENTS, STORES.PHOTOS, STORES.SYNC_QUEUE, STORES.SERVER_REVISIONS], 'readwrite');
+      tx.objectStore(STORES.INCIDENTS).clear();
+      tx.objectStore(STORES.PHOTOS).clear();
+      tx.objectStore(STORES.SERVER_REVISIONS).clear();
+
+      const queueStore = tx.objectStore(STORES.SYNC_QUEUE);
+      const req = queueStore.getAll();
+      req.onsuccess = () => {
+        const items: SyncQueueItem[] = req.result || [];
+        items.forEach(item => {
+          const isIncident = item.type === 'incident' || item.report_id?.startsWith('IR-') || item.title?.toLowerCase().includes('incident');
+          const isSOS = item.type === 'telemetry' || item.report_id?.startsWith('SOS-') || item.title?.toLowerCase().includes('distress');
+          if (isIncident || isSOS) {
+            queueStore.delete(item.id);
+          }
+        });
+      };
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  /**
    * Resets and purges database for testing or factory reset
    */
   public async clearAllData(): Promise<void> {

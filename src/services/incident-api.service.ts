@@ -30,20 +30,7 @@ class IncidentAPIService {
   }
 
   private seedInitialServerData() {
-    this.serverIncidentLedger.set('IR-402', {
-      report_id: 'IR-402',
-      revision: 1,
-      title: 'Active Rockfall - Sector 4B',
-      category: 'landslide',
-      severity: 'high',
-      description: 'Initial HQ assessment: Debris blocking south lane. Caution advised.',
-      district_road_segment: 'Sela Ridge Pass - Sector 4B',
-      latitude: 27.5925,
-      longitude: 91.8745,
-      photos_count: 1,
-      updated_at: Date.now() - 3600000,
-      updated_by: 'HQ Command Dispatcher'
-    });
+    // Clean initial ledger - no pre-seeded reports
   }
 
   /**

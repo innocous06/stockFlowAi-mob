@@ -61,26 +61,6 @@ export const INITIAL_MAP_PACKAGES: MapTilePackage[] = [
 
 export const INITIAL_SYNC_ITEMS: SyncQueueItem[] = [
   {
-    id: 'sync-1',
-    report_id: 'IR-992',
-    idempotency_key: 'idemp_init_992',
-    type: 'incident',
-    title: 'Incident Report: IR-992',
-    subtitle: 'Pending Upload',
-    sizeBytes: 420000,
-    timestamp: Date.now() - 1000 * 60 * 25,
-    status: 'pending',
-    sync_stage: 'QUEUED',
-    icon: 'assignment_late',
-    color: '#fbbb45',
-    retryCount: 0,
-    payload: {
-      category: 'landslide',
-      severity: 'high',
-      location: 'Mountain Pass Mile 42'
-    }
-  },
-  {
     id: 'sync-2',
     report_id: 'DLV-SEC4-88',
     idempotency_key: 'idemp_init_dlv88',
@@ -164,84 +144,10 @@ export const DEFAULT_TACTICAL_WAYPOINTS: Waypoint[] = [
     description: 'Emergency trauma stabilization point & high-altitude helipad.',
     elevationMeters: 2980,
     status: 'active'
-  },
-  {
-    id: 'wp-hz1',
-    name: 'Sela Ridge Landslide Hazard',
-    code: 'HAZ-SL1',
-    latitude: 27.601245,
-    longitude: 91.886032,
-    type: 'hazard',
-    description: 'Active debris flow reported. Reduced speed & single-lane clearance.',
-    elevationMeters: 3340,
-    status: 'blocked'
   }
 ];
 
-export const INITIAL_INCIDENT_REPORTS: IncidentReport[] = [
-  {
-    id: 'IR-992',
-    report_id: 'ir_init_992',
-    idempotency_key: 'idemp_key_ir_992',
-    tenant_id: 'tactical-unit-07',
-    revision: 1,
-    title: 'Rockfall & Mud Obstruction',
-    category: 'landslide',
-    severity: 'high',
-    district_road_segment: 'Sela Ridge Pass Kilometer 42 (NH-13)',
-    description: 'Heavy shale boulders and mud obstructing eastbound convoy lane at kilometer marker 42. Bulldozer clearing requested.',
-    observation_time: new Date(Date.now() - 1000 * 60 * 25).toISOString(),
-    latitude: 27.601245,
-    longitude: 91.886032,
-    accuracy_meters: 4.2,
-    altitude_meters: 3340,
-    gps_status: 'high_precision',
-    geo_json: {
-      type: 'Point',
-      coordinates: [91.886032, 27.601245, 3340]
-    },
-    locationName: 'Sela Ridge Pass Kilometer 42',
-    timestamp: Date.now() - 1000 * 60 * 25,
-    reportedBy: 'Driver J. Vance (Unit-07)',
-    photos: [
-      'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=600&q=80'
-    ],
-    photo_attachments: [],
-    syncStatus: 'pending',
-    sync_stage: 'QUEUED',
-    retry_count: 0
-  },
-  {
-    id: 'IR-988',
-    report_id: 'ir_init_988',
-    idempotency_key: 'idemp_key_ir_988',
-    tenant_id: 'tactical-unit-07',
-    revision: 1,
-    title: 'Bridge Expansion Joint Gap',
-    category: 'bridge_damage',
-    severity: 'medium',
-    district_road_segment: 'Valley Creek Culvert #14',
-    description: 'Heavy frost caused structural joint displacement on culvert 14. Passable by 4x4 high-clearance only.',
-    observation_time: new Date(Date.now() - 1000 * 60 * 180).toISOString(),
-    latitude: 27.591024,
-    longitude: 91.871035,
-    accuracy_meters: 5.1,
-    altitude_meters: 3120,
-    gps_status: 'high_precision',
-    geo_json: {
-      type: 'Point',
-      coordinates: [91.871035, 27.591024, 3120]
-    },
-    locationName: 'Valley Creek Culvert #14',
-    timestamp: Date.now() - 1000 * 60 * 180,
-    reportedBy: 'Driver J. Vance (Unit-07)',
-    photos: [],
-    photo_attachments: [],
-    syncStatus: 'synced',
-    sync_stage: 'SYNCED',
-    retry_count: 0
-  }
-];
+export const INITIAL_INCIDENT_REPORTS: IncidentReport[] = [];
 
 export const TACTICAL_ROUTES: RouteOption[] = [
   {
@@ -253,7 +159,7 @@ export const TACTICAL_ROUTES: RouteOption[] = [
     distanceKm: 8.4,
     estMinutes: 24,
     elevationGainM: 402,
-    hazardCount: 1,
+    hazardCount: 0,
     isOfflineCached: true,
     steps: [
       {

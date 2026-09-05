@@ -4,7 +4,7 @@ import { INITIAL_MAP_PACKAGES, INITIAL_SYNC_ITEMS, DEFAULT_TACTICAL_WAYPOINTS, I
 const KEYS = {
   SYNC_QUEUE: 'tactical_sync_queue_v1',
   MAP_PACKAGES: 'tactical_map_packages_v1',
-  INCIDENTS: 'tactical_incidents_v1',
+  INCIDENTS: 'tactical_incidents_v2',
   WAYPOINTS: 'tactical_waypoints_v1',
   NETWORK_MODE: 'tactical_network_mode_v1',
   LAST_SYNC: 'tactical_last_sync_v1',
@@ -13,10 +13,50 @@ const KEYS = {
   DRIVER_NAME: 'tactical_driver_name_v1'
 };
 
+export const purgeIncidentAndSOSStorage = (): void => {
+  try {
+    localStorage.removeItem('tactical_incidents_v1');
+    localStorage.removeItem(KEYS.INCIDENTS);
+    localStorage.setItem(KEYS.INCIDENTS, JSON.stringify([]));
+
+    const raw = localStorage.getItem(KEYS.SYNC_QUEUE);
+    if (raw) {
+      const parsed: SyncQueueItem[] = JSON.parse(raw);
+      const cleanQueue = parsed.filter((item) => {
+        const isIncident =
+          item.type === 'incident' ||
+          item.report_id?.startsWith('IR-') ||
+          item.title?.toLowerCase().includes('incident');
+        const isSOS =
+          item.type === 'telemetry' ||
+          item.report_id?.startsWith('SOS-') ||
+          item.title?.toLowerCase().includes('distress');
+        return !isIncident && !isSOS;
+      });
+      localStorage.setItem(KEYS.SYNC_QUEUE, JSON.stringify(cleanQueue));
+    }
+  } catch (e) {
+    console.error('Failed to purge incident and SOS storage', e);
+  }
+};
+
 export const getStoredSyncQueue = (): SyncQueueItem[] => {
   try {
     const raw = localStorage.getItem(KEYS.SYNC_QUEUE);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed: SyncQueueItem[] = JSON.parse(raw);
+      return parsed.filter((item) => {
+        const isIncident =
+          item.type === 'incident' ||
+          item.report_id?.startsWith('IR-') ||
+          item.title?.toLowerCase().includes('incident');
+        const isSOS =
+          item.type === 'telemetry' ||
+          item.report_id?.startsWith('SOS-') ||
+          item.title?.toLowerCase().includes('distress');
+        return !isIncident && !isSOS;
+      });
+    }
   } catch (e) {
     console.error('Failed to load sync queue', e);
   }
@@ -51,6 +91,10 @@ export const saveStoredMapPackages = (packages: MapTilePackage[]): void => {
 
 export const getStoredIncidents = (): IncidentReport[] => {
   try {
+    // Clear legacy v1 key if found
+    if (localStorage.getItem('tactical_incidents_v1')) {
+      localStorage.removeItem('tactical_incidents_v1');
+    }
     const raw = localStorage.getItem(KEYS.INCIDENTS);
     if (raw) return JSON.parse(raw);
   } catch (e) {
