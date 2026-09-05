@@ -33,11 +33,12 @@ interface AuthPageProps {
 }
 
 const USER_ICONS: Record<string, React.ReactNode> = {
-  user_vikram: <Building2 size={15} strokeWidth={2} />,
-  user_ananya: <HardHat size={15} strokeWidth={2} />,
-  user_tenzin: <Mountain size={15} strokeWidth={2} />,
-  user_priya: <HeartPulse size={15} strokeWidth={2} />,
-  user_rakesh: <Truck size={15} strokeWidth={2} />,
+  user_veyjval: <Building2 size={13} strokeWidth={2} />,
+  user_shreyas: <HardHat size={13} strokeWidth={2} />,
+  user_pari: <HeartPulse size={13} strokeWidth={2} />,
+  user_arnab: <Mountain size={13} strokeWidth={2} />,
+  user_dharmanshu: <Shield size={13} strokeWidth={2} />,
+  user_thavanesh: <Truck size={13} strokeWidth={2} />,
 };
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
@@ -418,6 +419,107 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
           </div>
         )}
 
+        {/* Quick 1-Tap Operator Shortcuts Grid */}
+        <div style={{ marginBottom: 16 }}>
+          <div
+            style={{
+              fontSize: 9,
+              fontWeight: 800,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: 'var(--copper)',
+              marginBottom: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+            }}
+          >
+            <Sparkles size={11} />
+            <span>1-Tap Quick Operator Shortcuts</span>
+          </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 6,
+            }}
+          >
+            {allUsers.map((u) => {
+              const icon = USER_ICONS[u.id];
+              return (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => handleQuickDemoClick(u)}
+                  disabled={loading}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 8px',
+                    borderRadius: 'var(--radius-card)',
+                    border: '1px solid var(--border)',
+                    background: 'var(--card)',
+                    color: 'var(--text)',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    minWidth: 0,
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--copper)';
+                    e.currentTarget.style.background = 'var(--copper-10)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                    e.currentTarget.style.background = 'var(--card)';
+                  }}
+                  title={`Quick Sign In: ${u.name} (${u.badge})`}
+                >
+                  <div
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      background: u.avatarColor || 'var(--copper)',
+                      color: '#FFFFFF',
+                      display: 'grid',
+                      placeItems: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {icon || <span style={{ fontSize: 9, fontWeight: 800 }}>{u.name.charAt(0)}</span>}
+                  </div>
+                  <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {u.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 7.5,
+                        color: 'var(--text-muted)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {u.badge}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Email / Badge Input */}
           <div>
@@ -437,7 +539,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
-                placeholder="e.g. vikram.sharma@stockflow.ai or HUB COMMAND"
+                placeholder="e.g. veyjval@stockflow.ai or HUB COMMAND"
                 value={emailOrBadge}
                 onChange={(e) => setEmailOrBadge(e.target.value)}
                 style={{
@@ -598,14 +700,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onSuccess }) => {
                     borderRadius: '50%',
                     background: user.avatarColor || 'var(--copper)',
                     color: '#FFFFFF',
-                    fontSize: 9,
-                    fontWeight: 800,
                     display: 'grid',
                     placeItems: 'center',
                     flexShrink: 0,
                   }}
                 >
-                  {user.name.charAt(0)}
+                  {USER_ICONS[user.id] || (
+                    <span style={{ fontSize: 9, fontWeight: 800 }}>{user.name.charAt(0)}</span>
+                  )}
                 </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

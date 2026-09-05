@@ -358,10 +358,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       severity: 'critical',
       district_road_segment: route.roadSegment || `${route.name} (Mile 14)`,
       description: `Massive boulder collapse completely blocking road corridor on ${route.name}. Convoy transit is halted. Immediate rerouting advised.`,
-      reportedBy: 'Ananya Roy',
-      role: 'PWD Road Safety Inspector',
-      unitId: 'PWD-INSP-12',
-      badge: 'PWD INSPECTOR',
+      reportedBy: 'Shreyas',
+      role: 'Highway Safety & Road Inspector',
+      unitId: 'SAFETY-SH-02',
+      badge: 'SAFETY LEAD',
       latitude: firstWp[0],
       longitude: firstWp[1],
       coordinates: `${firstWp[0].toFixed(6)}°N, ${firstWp[1].toFixed(6)}°E`,
@@ -1081,8 +1081,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     role?: string;
     department?: string;
   }) => {
-    const driver = options?.driverName || 'Vikram Sharma';
-    const unit = options?.vehicleId || 'CONVOY-ECHO-07';
+    const driver = options?.driverName || 'Veyjval';
+    const unit = options?.vehicleId || 'COMMAND-VE-01';
     const event: SOSEvent = {
       id: `SOS-${Date.now()}`,
       activatedAt: Date.now(),
