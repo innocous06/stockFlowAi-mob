@@ -28,13 +28,13 @@ interface Particle {
 const TEXT        = 'StockFlow AI';
 const PARTICLE_SZ = 3;
 const DENSITY     = 5;
-const COLOR       = '#FFFFFF';          // particle base  → white
-const HIGHLIGHT   = '#FFD28A';          // particle tip   → warm gold
+const COLOR       = '#B8703D';          // particle base  → amber copper
+const HIGHLIGHT   = '#7A3E15';          // particle tip   → dark copper
 const SCATTER     = 200;
 const GATHER_DUR  = 1500;
 const STAGGER     = 380;
-const BG          = '#B8703D';          // amber copper
-const GLOW_COLOR  = 'rgba(255,210,138,0.7)';
+const BG          = '#FFF8F0';          // warm cream / off-white
+const GLOW_COLOR  = 'rgba(184,112,61,0.45)';
 
 interface SplashScreenProps { onDone: () => void; }
 
