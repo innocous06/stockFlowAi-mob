@@ -33,7 +33,6 @@ export const ActiveDrivingHUD: React.FC = () => {
     showToast,
     mapLayer,
     setMapLayer,
-    triggerRouteBlockedDemo,
   } = useApp();
 
   const [showLayerMenu, setShowLayerMenu] = useState(false);
@@ -534,30 +533,6 @@ export const ActiveDrivingHUD: React.FC = () => {
                 style={{ flex: 1, minHeight: 38 }}
               >
                 Transmit Alert
-              </button>
-            </div>
-
-            {/* In-HUD Simulation Trigger */}
-            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => {
-                  setShowQuickHazardModal(false);
-                  triggerRouteBlockedDemo();
-                }}
-                style={{
-                  width: '100%',
-                  minHeight: 32,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: 'var(--danger)',
-                  background: 'rgba(194, 59, 46, 0.08)',
-                  borderRadius: 'var(--radius-pill)',
-                  border: '1px dashed rgba(194, 59, 46, 0.4)',
-                }}
-              >
-                ⚠️ Test Route Blocked Alert on this HUD
               </button>
             </div>
           </div>

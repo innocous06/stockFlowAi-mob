@@ -27,7 +27,6 @@ export const DriverHome: React.FC = () => {
     startDrivingJourney,
     isOnline,
     networkSimulationMode,
-    triggerRouteBlockedDemo,
   } = useApp();
   const { t } = useLanguage();
 
@@ -128,34 +127,6 @@ export const DriverHome: React.FC = () => {
           <span>{t('home.engage_navigation')}</span>
           <ChevronRight size={14} strokeWidth={2.5} />
         </button>
-
-        {/* Route Blocked Hazard Alert Simulation Trigger */}
-        <div style={{ marginTop: 10 }}>
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={triggerRouteBlockedDemo}
-            style={{
-              width: '100%',
-              minHeight: 32,
-              fontSize: 10,
-              fontWeight: 700,
-              color: 'var(--danger)',
-              border: '1px dashed rgba(194, 59, 46, 0.4)',
-              borderRadius: 'var(--radius-pill)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              background: 'rgba(194, 59, 46, 0.06)',
-              cursor: 'pointer',
-            }}
-            title="Simulate incoming route blocked warning with alarm sound"
-          >
-            <AlertTriangle size={12} strokeWidth={2.5} />
-            <span>Simulate Route Blocked Warning (Alarm + Popup)</span>
-          </button>
-        </div>
       </div>
 
       {/* ── Telemetry Grid (Neutral high-contrast numbers) ── */}
