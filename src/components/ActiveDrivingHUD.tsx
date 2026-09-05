@@ -15,11 +15,13 @@ import {
   Check,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { TacticalMap } from './TacticalMap';
 import { calculateDistanceMeters } from '../services/gps-geojson.service';
 import { speakInstruction } from '../services/voice-guidance.service';
 
 export const ActiveDrivingHUD: React.FC = () => {
+  const { currentUser } = useAuth();
   const {
     activeRoute,
     currentGPS,
@@ -140,11 +142,14 @@ export const ActiveDrivingHUD: React.FC = () => {
           severity: 'critical',
           description: `Rapid hazard reported on ${segment} at coordinates ${currentGPS.latitude.toFixed(5)}°N, ${currentGPS.longitude.toFixed(5)}°E`,
           photo: null,
-          reportedBy: 'Convoy Lead Operator',
-          role: 'Active Highway Escort',
-          unitId: 'CONVOY-ECHO-07',
-          badge: 'CONVOY LEAD',
-          district_road_segment: segment,
+          reportedBy: currentUser.name,
+          role: currentUser.role,
+          unitId: currentUser.unitId,
+          badge: currentUser.badge,
+          senderUserId: currentUser.id,
+          routeId: activeRoute.id,
+          affectedRouteName: activeRoute.name,
+          district_road_segment: activeRoute.roadSegment || segment,
           latitude: currentGPS.latitude,
           longitude: currentGPS.longitude,
           coordinates: `${currentGPS.latitude.toFixed(5)}°N, ${currentGPS.longitude.toFixed(5)}°E`,

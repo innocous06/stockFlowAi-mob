@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { AppTab, GPSPosition, IncidentReport, MapTilePackage, SOSEvent, SyncQueueItem, Waypoint, RouteOption, MapLayerType, BlockedRouteAlert } from '../types';
+import { useAuth, UserProfile } from './AuthContext';
 import { supabase } from '../services/supabase';
 import { 
   getStoredSyncQueue, 
@@ -135,6 +136,12 @@ const INITIAL_COORDS: GPSPosition = {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser } = useAuth();
+  const currentUserRef = useRef<UserProfile | null>(currentUser);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
   const [currentTab, setCurrentTab] = useState<AppTab>('driver-home');
   const [isOnline, setIsOnline] = useState<boolean>(false); // starts in offline mode to match the initial prompt
   const [networkSimulationMode, setNetworkSimulationMode] = useState<'online' | 'offline' | 'spotty'>('offline');
@@ -235,59 +242,96 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const checkAndTriggerRouteBlockedAlert = useCallback((data: any) => {
     if (!data) return;
 
+    // 1. ONLY drivers currently on a route (active driving journey) receive the route blocked alert
+    if (!isDrivingJourneyRef.current) {
+      return;
+    }
+
+    // 2. The person who reported the hazard must NOT receive their own alert
+    const curUser = currentUserRef.current;
+    if (curUser) {
+      if (data.senderUserId && data.senderUserId === curUser.id) {
+        return;
+      }
+      if (data.reportedBy && (
+        data.reportedBy.toLowerCase().includes(curUser.name.toLowerCase()) ||
+        (curUser.unitId && data.reportedBy.toLowerCase().includes(curUser.unitId.toLowerCase()))
+      )) {
+        return;
+      }
+    }
+
     const currentRoute = activeRouteRef.current || activeRoute;
     if (!currentRoute) return;
 
-    const activeName = (currentRoute.name || '').toLowerCase();
-    const activeSeg = (currentRoute.roadSegment || '').toLowerCase();
-    const activeDest = (currentRoute.destination || '').toLowerCase();
+    // 3. The reported problem MUST be on the recipient driver's current route
+    const clean = (s?: string) => (s || '').toLowerCase().trim();
+    const myRouteId = clean(currentRoute.id);
+    const myRouteName = clean(currentRoute.name);
+    const myRoadSegment = clean(currentRoute.roadSegment);
 
-    const incTitle = (data.title || '').toLowerCase();
-    const incDesc = (data.description || '').toLowerCase();
-    const incSeg = (data.district_road_segment || data.locationName || '').toLowerCase();
+    const incRouteId = clean(data.routeId);
+    const incRouteName = clean(data.affectedRouteName || data.routeName);
+    const incRoadSegment = clean(data.district_road_segment || data.locationName);
 
-    // Corridor and segment matching logic
-    const isNameMatch =
-      (activeSeg && (incDesc.includes(activeSeg) || incSeg.includes(activeSeg) || incTitle.includes(activeSeg))) ||
-      (activeDest && (incDesc.includes(activeDest) || incSeg.includes(activeDest))) ||
-      activeName.split(' ').some((w: string) => w.length > 4 && (incDesc.includes(w.toLowerCase()) || incSeg.includes(w.toLowerCase())));
+    // Direct ID or exact route name match
+    const isIdMatch = Boolean(incRouteId && myRouteId && incRouteId === myRouteId);
+    const isRouteNameMatch = Boolean(
+      incRouteName && myRouteName && (
+        incRouteName === myRouteName ||
+        (incRouteName.length > 6 && myRouteName.includes(incRouteName)) ||
+        (myRouteName.length > 6 && incRouteName.includes(myRouteName))
+      )
+    );
+    const isSegmentMatch = Boolean(
+      incRoadSegment && myRoadSegment && (
+        incRoadSegment === myRoadSegment ||
+        (incRoadSegment.length > 5 && myRoadSegment.includes(incRoadSegment)) ||
+        (myRoadSegment.length > 5 && incRoadSegment.includes(myRoadSegment))
+      )
+    );
 
-    let isCoordNearRoute = false;
-    if (data.latitude && data.longitude && currentRoute.waypoints?.length > 0) {
+    // Coordinate proximity along the route waypoints (within 5 km corridor buffer)
+    let isCoordAlongRoute = false;
+    if (data.latitude && data.longitude && currentRoute.waypoints && currentRoute.waypoints.length > 0) {
       for (const wp of currentRoute.waypoints) {
         const distM = calculateDistanceMeters(wp[0], wp[1], data.latitude, data.longitude);
-        if (distM <= 35000) { // within 35 km corridor buffer
-          isCoordNearRoute = true;
+        if (distM <= 5000) { // 5 km maximum corridor tolerance
+          isCoordAlongRoute = true;
           break;
         }
       }
     }
 
-    // Trigger if on the same route or if user is currently navigating the corridor
-    if (isNameMatch || isCoordNearRoute || isDrivingJourneyRef.current) {
-      const repName = data.reportedBy || data.user || 'Field Operator Ahead';
-      const alertItem: BlockedRouteAlert = {
-        id: data.messageId || `BLK-${Date.now()}`,
-        title: data.title || 'Critical Road Obstacle',
-        category: data.category || 'roadblock',
-        severity: data.severity || 'critical',
-        description: data.description || 'Severe obstacle obstructing traffic lanes along active corridor.',
-        districtRoadSegment: data.district_road_segment || data.locationName || currentRoute.roadSegment || currentRoute.name,
-        reportedBy: repName,
-        reporterRole: data.role || 'Field Road Safety Inspector',
-        reporterUnitId: data.unitId || 'Convoy Unit',
-        reporterBadge: data.badge || 'SAFETY INSP',
-        coordinates: data.coordinates || `${(data.latitude || currentGPS.latitude).toFixed(6)}°N, ${(data.longitude || currentGPS.longitude).toFixed(6)}°E`,
-        latitude: data.latitude || currentGPS.latitude,
-        longitude: data.longitude || currentGPS.longitude,
-        photo: data.photo || null,
-        affectedRouteName: currentRoute.name,
-        timestamp: Date.now(),
-      };
+    const isSameRoute = isIdMatch || isRouteNameMatch || isSegmentMatch || isCoordAlongRoute;
 
-      setBlockedRouteAlert(alertItem);
-      startRouteBlockedAlarm(data.title || 'Road Hazard', repName);
+    if (!isSameRoute) {
+      // Incident is on a different route, do not alert this driver
+      return;
     }
+
+    const repName = data.reportedBy || data.user || 'Field Operator Ahead';
+    const alertItem: BlockedRouteAlert = {
+      id: data.messageId || `BLK-${Date.now()}`,
+      title: data.title || 'Critical Road Obstacle',
+      category: data.category || 'roadblock',
+      severity: data.severity || 'critical',
+      description: data.description || 'Severe obstacle obstructing traffic lanes along active corridor.',
+      districtRoadSegment: data.district_road_segment || data.locationName || currentRoute.roadSegment || currentRoute.name,
+      reportedBy: repName,
+      reporterRole: data.role || 'Field Road Safety Inspector',
+      reporterUnitId: data.unitId || 'Convoy Unit',
+      reporterBadge: data.badge || 'SAFETY INSP',
+      coordinates: data.coordinates || `${(data.latitude || currentGPS.latitude).toFixed(6)}°N, ${(data.longitude || currentGPS.longitude).toFixed(6)}°E`,
+      latitude: data.latitude || currentGPS.latitude,
+      longitude: data.longitude || currentGPS.longitude,
+      photo: data.photo || null,
+      affectedRouteName: currentRoute.name,
+      timestamp: Date.now(),
+    };
+
+    setBlockedRouteAlert(alertItem);
+    startRouteBlockedAlarm(data.title || 'Road Hazard', repName);
   }, [activeRoute, currentGPS]);
 
   // Inter-tab / local mesh broadcast listener
@@ -1111,12 +1155,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const broadcastIncident = async (payload: any) => {
+    const curUser = currentUserRef.current;
+    const currentRoute = activeRouteRef.current || activeRoute;
+    const enrichedPayload = {
+      ...payload,
+      senderUserId: payload.senderUserId || curUser?.id,
+      reportedBy: payload.reportedBy || curUser?.name || 'Field Operator',
+      routeId: payload.routeId || (isDrivingJourneyRef.current ? currentRoute?.id : undefined),
+      affectedRouteName: payload.affectedRouteName || (isDrivingJourneyRef.current ? currentRoute?.name : undefined),
+      district_road_segment: payload.district_road_segment || (isDrivingJourneyRef.current ? currentRoute?.roadSegment : undefined),
+    };
+
     if (channelRef.current) {
       try {
         await channelRef.current.send({
           type: 'broadcast',
           event: 'incident',
-          payload
+          payload: enrichedPayload,
         });
       } catch (e) {
         console.warn('[Supabase Realtime] Incident broadcast error:', e);
@@ -1126,7 +1181,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         const bc = new BroadcastChannel('stockflow_fleet_mesh');
-        bc.postMessage({ type: 'incident', payload });
+        bc.postMessage({ type: 'incident', payload: enrichedPayload });
         bc.close();
       }
     } catch {}

@@ -90,6 +90,7 @@ export const IncidentReporting: React.FC = () => {
     isRealGPSFix,
     isLocating,
     realLocationAddress,
+    activeRoute,
   } = useApp();
   const { currentUser } = useAuth();
   const { t } = useLanguage();
@@ -302,6 +303,10 @@ export const IncidentReporting: React.FC = () => {
           altitude: activeAlt,
           accuracy: activeAccuracy,
           user: currentUser.name,
+          senderUserId: currentUser.id,
+          routeId: activeRoute?.id,
+          affectedRouteName: activeRoute?.name,
+          district_road_segment: districtRoadSegment,
         });
       } catch {
         /* ignore */
